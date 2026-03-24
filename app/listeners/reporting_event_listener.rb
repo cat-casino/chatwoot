@@ -5,8 +5,6 @@ class ReportingEventListener < BaseListener
     conversation = extract_conversation_and_account(event)[0]
     return if conversation.resolved_at.blank?
 
-    log_prefix = "[ResolutionMetric] conv_id=#{conversation.id} inbox_id=#{conversation.inbox_id}"
-
     start_time = conversation.created_at
     end_time = conversation.resolved_at
     time_to_resolve = end_time - start_time
@@ -15,24 +13,10 @@ class ReportingEventListener < BaseListener
     service = resolution_service(conversation)
     service.create_conversation_resolved_events(start_time, end_time, time_to_resolve)
 
-    if conversation.inbox.active_bot?
-      without_bot_start_time = resolve_without_bot_start_time(conversation, log_prefix)
-      return if without_bot_start_time.nil?
-    else
-      without_bot_start_time = start_time
-      Rails.logger.info("#{log_prefix} | has_bot=false | without_bot_start_time=conversation_start=#{start_time.iso8601}")
-    end
+    without_bot_start_time = resolve_without_bot_time(conversation, start_time)
+    return if without_bot_start_time.nil?
 
-    Rails.logger.info(
-      "#{log_prefix} | " \
-      'creating resolution_time_without_bot | ' \
-      "without_bot_start_time=#{without_bot_start_time.iso8601} | " \
-      "resolved_at=#{end_time.iso8601} | " \
-      "time_without_bot=#{(end_time - without_bot_start_time).to_i}s | " \
-      "total_resolution_time=#{time_to_resolve.to_i}s | " \
-      "bot_time=#{(without_bot_start_time - start_time).to_i}s"
-    )
-
+    log_resolution_without_bot(conversation, start_time, end_time, time_to_resolve, without_bot_start_time)
     service.create_resolution_without_bot_events(without_bot_start_time)
   end
 
@@ -110,6 +94,30 @@ class ReportingEventListener < BaseListener
   end
 
   private
+
+  def resolve_without_bot_time(conversation, start_time)
+    log_prefix = "[ResolutionMetric] conv_id=#{conversation.id} inbox_id=#{conversation.inbox_id}"
+
+    if conversation.inbox.active_bot?
+      resolve_without_bot_start_time(conversation, log_prefix)
+    else
+      Rails.logger.info("#{log_prefix} | has_bot=false | without_bot_start_time=conversation_start=#{start_time.iso8601}")
+      start_time
+    end
+  end
+
+  def log_resolution_without_bot(conversation, start_time, end_time, time_to_resolve, without_bot_start_time)
+    log_prefix = "[ResolutionMetric] conv_id=#{conversation.id} inbox_id=#{conversation.inbox_id}"
+    Rails.logger.info(
+      "#{log_prefix} | " \
+      'creating resolution_time_without_bot | ' \
+      "without_bot_start_time=#{without_bot_start_time.iso8601} | " \
+      "resolved_at=#{end_time.iso8601} | " \
+      "time_without_bot=#{(end_time - without_bot_start_time).to_i}s | " \
+      "total_resolution_time=#{time_to_resolve.to_i}s | " \
+      "bot_time=#{(without_bot_start_time - start_time).to_i}s"
+    )
+  end
 
   def resolve_without_bot_start_time(conversation, log_prefix)
     operator_first_message_at = first_operator_message_at(conversation)

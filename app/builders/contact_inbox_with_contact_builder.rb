@@ -64,9 +64,12 @@ class ContactInboxWithContactBuilder
 
     contact ||= find_contact_by_email(contact_attributes[:email]) if contact_attributes[:identifier].blank?
     contact ||= find_contact_by_phone_number(contact_attributes[:phone_number]) if contact_attributes[:identifier].blank?
-    contact ||= find_contact_by_instagram_source_id(source_id) if instagram_channel?
-
+    contact ||= find_contact_by_instagram_source_id_if_needed
     contact
+  end
+
+  def find_contact_by_instagram_source_id_if_needed
+    find_contact_by_instagram_source_id(source_id) if instagram_channel?
   end
 
   def instagram_channel?

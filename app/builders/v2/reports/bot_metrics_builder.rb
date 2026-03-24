@@ -69,7 +69,7 @@ class V2::Reports::BotMetricsBuilder
            .filter_by_inbox_id(selected_inbox_ids)
            .average(average_value_key)
   end
-  
+
   def average_value_key
     ActiveModel::Type::Boolean.new.cast(params[:business_hours]) ? :value_in_business_hours : :value
   end

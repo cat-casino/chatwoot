@@ -10,21 +10,11 @@ class Widget::ConversationProxyService
     target_conversation = linked_conversation
     return if target_conversation.blank?
 
-    has_content = @message_params[:content].present?
-    has_attachments = @message_params[:attachment_ids].present?
-    return unless has_content || has_attachments
+    return unless message_has_content?
 
     Thread.current[:mirroring_widget_message] = true
 
-    mirrored = target_conversation.messages.create!(
-      account_id: target_conversation.account_id,
-      inbox_id: target_conversation.inbox_id,
-      message_type: :incoming,
-      content: @message_params[:content].presence,
-      sender: @widget_conversation.contact,
-      source_id: @message_params[:echo_id]
-    )
-
+    mirrored = create_mirrored_message(target_conversation)
     mirror_attachments(mirrored)
 
     Rails.logger.info('[ProxyService] CREATED mirrored incoming message')
@@ -35,6 +25,21 @@ class Widget::ConversationProxyService
   end
 
   private
+
+  def message_has_content?
+    @message_params[:content].present? || @message_params[:attachment_ids].present?
+  end
+
+  def create_mirrored_message(target_conversation)
+    target_conversation.messages.create!(
+      account_id: target_conversation.account_id,
+      inbox_id: target_conversation.inbox_id,
+      message_type: :incoming,
+      content: @message_params[:content].presence,
+      sender: @widget_conversation.contact,
+      source_id: @message_params[:echo_id]
+    )
+  end
 
   def mirror_attachments(mirrored_message)
     return if @message_params[:attachment_ids].blank?

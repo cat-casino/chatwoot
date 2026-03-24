@@ -48,10 +48,8 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     result = ::Conversations::FilterService.new(params.permit!, current_user, current_account).perform
     @conversations = result[:conversations]
     @conversations_count = result[:count]
-  rescue CustomExceptions::CustomFilter::InvalidAttribute,
-         CustomExceptions::CustomFilter::InvalidOperator,
-         CustomExceptions::CustomFilter::InvalidQueryOperator,
-         CustomExceptions::CustomFilter::InvalidValue => e
+  rescue CustomExceptions::CustomFilter::InvalidAttribute, CustomExceptions::CustomFilter::InvalidOperator,
+         CustomExceptions::CustomFilter::InvalidQueryOperator, CustomExceptions::CustomFilter::InvalidValue => e
     render_could_not_create_error(e.message)
   end
 
@@ -86,9 +84,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   def pending_to_open_by_bot?
-    return false unless Current.user.is_a?(AgentBot)
-
-    @conversation.status == 'pending' && params[:status] == 'open'
+    Current.user.is_a?(AgentBot) && @conversation.status == 'pending' && params[:status] == 'open'
   end
 
   def should_assign_conversation?

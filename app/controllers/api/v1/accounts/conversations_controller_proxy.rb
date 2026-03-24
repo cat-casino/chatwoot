@@ -1,36 +1,70 @@
 module Api::V1::Accounts::ConversationsControllerProxy
   def change_inbox
-    widget_conversation = Current.account.conversations.find_by!(display_id: params[:id])
-    authorize widget_conversation, :update?
+    widget_conversation = find_and_authorize_conversation
+    target_inbox = find_and_authorize_inbox
 
-    target_inbox = Current.account.inboxes.find(params[:inbox_id])
-    authorize target_inbox, :show?
+    operator_conversation = transfer_conversation(widget_conversation, target_inbox)
 
-    operator_conversation = nil
-
-    ActiveRecord::Base.transaction do
-      contact_inbox = find_or_create_contact_inbox(widget_conversation.contact, target_inbox)
-
-      operator_conversation = Conversation.create!(account: widget_conversation.account, inbox: target_inbox,
-                                                   contact: widget_conversation.contact, contact_inbox: contact_inbox,
-                                                   additional_attributes: (widget_conversation.additional_attributes || {}).merge(
-                                                     'linked_conversation_id' => widget_conversation.id
-                                                   ),
-                                                   custom_attributes: widget_conversation.custom_attributes)
-
-      widget_conversation.update!(
-        additional_attributes: (widget_conversation.additional_attributes || {}).merge('linked_conversation_id' => operator_conversation.id)
-      )
-    end
-
-    render json: { success: true, inbox_id: target_inbox.id,
-                   website_token: target_inbox.channel.respond_to?(:website_token) ? target_inbox.channel.website_token : nil }
+    render json: build_response(target_inbox, operator_conversation)
   rescue StandardError => e
     Rails.logger.error("ConversationsControllerProxy#change_inbox failed: #{e.class} - #{e.message}\n#{e.backtrace.first(5).join("\n")}")
     render json: { error: 'Could not change inbox' }, status: :unprocessable_entity
   end
 
   private
+
+  def find_and_authorize_conversation
+    conversation = Current.account.conversations.find_by!(display_id: params[:id])
+    authorize conversation, :update?
+    conversation
+  end
+
+  def find_and_authorize_inbox
+    inbox = Current.account.inboxes.find(params[:inbox_id])
+    authorize inbox, :show?
+    inbox
+  end
+
+  def transfer_conversation(widget_conversation, target_inbox)
+    operator_conversation = nil
+
+    ActiveRecord::Base.transaction do
+      contact_inbox = find_or_create_contact_inbox(widget_conversation.contact, target_inbox)
+      operator_conversation = create_operator_conversation(widget_conversation, target_inbox, contact_inbox)
+      link_conversations(widget_conversation, operator_conversation)
+    end
+
+    operator_conversation
+  end
+
+  def create_operator_conversation(widget_conversation, target_inbox, contact_inbox)
+    Conversation.create!(
+      account: widget_conversation.account,
+      inbox: target_inbox,
+      contact: widget_conversation.contact,
+      contact_inbox: contact_inbox,
+      additional_attributes: merged_attributes(widget_conversation, widget_conversation.id),
+      custom_attributes: widget_conversation.custom_attributes
+    )
+  end
+
+  def link_conversations(widget_conversation, operator_conversation)
+    widget_conversation.update!(
+      additional_attributes: merged_attributes(widget_conversation, operator_conversation.id)
+    )
+  end
+
+  def merged_attributes(conversation, linked_id)
+    (conversation.additional_attributes || {}).merge('linked_conversation_id' => linked_id)
+  end
+
+  def build_response(inbox, _operator_conversation)
+    {
+      success: true,
+      inbox_id: inbox.id,
+      website_token: inbox.channel.respond_to?(:website_token) ? inbox.channel.website_token : nil
+    }
+  end
 
   def find_or_create_contact_inbox(contact, inbox)
     existing = ContactInbox.find_by(contact: contact, inbox: inbox)

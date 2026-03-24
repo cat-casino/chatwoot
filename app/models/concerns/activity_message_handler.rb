@@ -1,3 +1,4 @@
+# rubocop:disable Metrics/ModuleLength
 module ActivityMessageHandler
   extend ActiveSupport::Concern
 
@@ -133,5 +134,5 @@ module ActivityMessageHandler
     user_name
   end
 end
-
+# rubocop:enable Metrics/ModuleLength
 ActivityMessageHandler.prepend_mod_with('ActivityMessageHandler')
