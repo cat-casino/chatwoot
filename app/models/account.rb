@@ -40,6 +40,8 @@ class Account < ApplicationRecord
         'auto_resolve_after': { 'type': %w[integer null], 'minimum': 10, 'maximum': 1_439_856 },
         'auto_resolve_message': { 'type': %w[string null] },
         'auto_resolve_ignore_waiting': { 'type': %w[boolean null] },
+        'auto_resolve_pending_after': { 'type': %w[integer null], 'minimum': 10, 'maximum': 1_439_856 },
+        'auto_resolve_pending_message': { 'type': %w[string null] },
         'audio_transcriptions': { 'type': %w[boolean null] },
         'auto_resolve_label': { 'type': %w[string null] },
         'conversation_required_attributes': {
@@ -91,7 +93,8 @@ class Account < ApplicationRecord
                  attribute_resolver: ->(record) { record.settings }
 
   store_accessor :settings, :auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting,
-                 :auto_resolve_message_agent, :auto_resolve_message_client, :auto_resolve_split_reasons
+                 :auto_resolve_message_agent, :auto_resolve_message_client, :auto_resolve_split_reasons,
+                 :auto_resolve_pending_after, :auto_resolve_pending_message
 
   store_accessor :settings, :audio_transcriptions, :auto_resolve_label, :conversation_required_attributes
   store_accessor :settings, :captain_models, :captain_features
@@ -148,6 +151,7 @@ class Account < ApplicationRecord
   enum :status, { active: 0, suspended: 1 }
 
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
+  scope :with_auto_resolve_pending, -> { where("(settings ->> 'auto_resolve_pending_after')::int IS NOT NULL") }
 
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
