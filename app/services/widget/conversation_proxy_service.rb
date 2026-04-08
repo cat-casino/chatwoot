@@ -1,4 +1,6 @@
 class Widget::ConversationProxyService
+  include Events::Types
+
   def initialize(widget_conversation, message_params)
     @widget_conversation = widget_conversation
     @message_params = message_params || {}
@@ -9,13 +11,21 @@ class Widget::ConversationProxyService
 
     target_conversation = linked_conversation
     return if target_conversation.blank?
-
     return unless message_has_content?
 
     Thread.current[:mirroring_widget_message] = true
 
     mirrored = create_mirrored_message(target_conversation)
     mirror_attachments(mirrored)
+
+    mirrored.reload
+
+    Rails.configuration.dispatcher.dispatch(
+      MESSAGE_CREATED,
+      Time.zone.now,
+      message: mirrored,
+      performed_by: nil
+    )
 
     Rails.logger.info('[ProxyService] CREATED mirrored incoming message')
   rescue StandardError => e
@@ -52,7 +62,6 @@ class Widget::ConversationProxyService
         account_id: mirrored_message.account_id,
         file_type: original.file_type
       )
-
       new_attachment.file.attach(original.file.blob)
       new_attachment.save!
     rescue StandardError => e
@@ -63,7 +72,6 @@ class Widget::ConversationProxyService
   def linked_conversation
     linked_id = @widget_conversation.additional_attributes&.dig('linked_conversation_id')
     return if linked_id.blank?
-
     Conversation.find_by(id: linked_id)
   end
 end

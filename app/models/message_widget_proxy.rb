@@ -14,7 +14,7 @@ module MessageWidgetProxy
 
     widget_conversation = find_widget_conversation_linked_to(conversation)
     return if widget_conversation.blank?
-    return if content.blank?
+    return if content.blank? && attachments.empty?
 
     Thread.current[:mirroring_widget_message] = true
 
@@ -24,7 +24,20 @@ module MessageWidgetProxy
       source_id: nil
     }
 
-    Messages::MessageBuilder.new(sender, widget_conversation, params).perform
+    mirrored = Messages::MessageBuilder.new(sender, widget_conversation, params).perform
+
+    attachments.each do |original_attachment|
+      next unless original_attachment.file.attached?
+
+      new_att = mirrored.attachments.create!(
+        account_id: mirrored.account_id,
+        file_type: original_attachment.file_type
+      )
+      new_att.file.attach(original_attachment.file.blob)
+      new_att.save!
+    rescue StandardError => e
+      Rails.logger.error("MessageWidgetProxy: failed to mirror attachment: #{e.message}")
+    end
   rescue StandardError => e
     Rails.logger.error(
       "MessageWidgetProxy mirror_outgoing_to_linked_widget_conversation failed: #{e.class} - #{e.message}"
