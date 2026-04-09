@@ -19,6 +19,7 @@ export const CONVERSATION_STATUS = {
   PENDING: 'pending',
   SNOOZED: 'snoozed',
   QUEUED: 'queued',
+  PROXIED: 'proxied',
 };
 
 export const CONVERSATION_PRIORITY = {

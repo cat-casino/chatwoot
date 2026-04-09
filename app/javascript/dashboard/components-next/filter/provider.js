@@ -89,14 +89,20 @@ export function useConversationFilterContext() {
       attributeName: t('FILTER.ATTRIBUTES.STATUS'),
       label: t('FILTER.ATTRIBUTES.STATUS'),
       inputType: 'multiSelect',
-      options: ['open', 'resolved', 'pending', 'queued', 'snoozed', 'all'].map(
-        id => {
-          return {
-            id,
-            name: t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${id}.TEXT`),
-          };
-        }
-      ),
+      options: [
+        'open',
+        'resolved',
+        'pending',
+        'queued',
+        'proxied',
+        'snoozed',
+        'all',
+      ].map(id => {
+        return {
+          id,
+          name: t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${id}.TEXT`),
+        };
+      }),
       dataType: 'text',
       filterOperators: equalityOperators.value,
       attributeModel: 'standard',
