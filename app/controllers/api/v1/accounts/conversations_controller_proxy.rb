@@ -35,6 +35,8 @@ module Api::V1::Accounts::ConversationsControllerProxy
       widget_conversation.update!(status: :proxied)
     end
 
+    copy_message_history(widget_conversation, operator_conversation)
+
     operator_conversation
   end
 
@@ -57,6 +59,51 @@ module Api::V1::Accounts::ConversationsControllerProxy
 
   def merged_attributes(conversation, linked_id)
     (conversation.additional_attributes || {}).merge('linked_conversation_id' => linked_id)
+  end
+
+  def copy_message_history(source_conversation, target_conversation)
+    source_conversation.messages.chat.order(:created_at).each do |message|
+      next if message.content.blank? && message.attachments.empty?
+      next if target_conversation.messages.exists?(source_id: "history_#{message.id}")
+  
+      is_private = message.outgoing?
+  
+      mirrored = target_conversation.messages.new(
+        account_id: target_conversation.account_id,
+        inbox_id: target_conversation.inbox_id,
+        message_type: is_private ? :activity : message.message_type,
+        content: message.content,
+        sender: message.sender,
+        private: is_private,
+        source_id: "history_#{message.id}"
+      )
+      mirrored.save!(validate: false)
+      mirrored.update_column(:created_at, message.created_at)
+  
+      message.attachments.each do |attachment|
+        next unless attachment.file.attached?
+  
+        new_att = mirrored.attachments.create!(
+          account_id: mirrored.account_id,
+          file_type: attachment.file_type
+        )
+        new_att.file.attach(attachment.file.blob)
+        new_att.save!
+      rescue StandardError => e
+        Rails.logger.error("copy_message_history: failed to mirror attachment #{attachment.id}: #{e.message}")
+      end
+  
+      mirrored.reload
+  
+      Rails.configuration.dispatcher.dispatch(
+        Events::Types::MESSAGE_CREATED,
+        Time.zone.now,
+        message: mirrored,
+        performed_by: nil
+      )
+    rescue StandardError => e
+      Rails.logger.error("copy_message_history: failed to mirror message #{message.id}: #{e.message}")
+    end
   end
 
   def build_response(inbox, _operator_conversation)
