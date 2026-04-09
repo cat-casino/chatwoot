@@ -31,6 +31,7 @@ export default {
         CONVERSATION_STATUS.SNOOZED,
         CONVERSATION_STATUS.PENDING,
         CONVERSATION_STATUS.QUEUED,
+        CONVERSATION_STATUS.PROXIED,
       ].includes(this.conversationStatus);
     },
     isIframe() {
@@ -48,7 +49,7 @@ export default {
     hasWidgetOptions() {
       return (
         this.showPopoutButton ||
-        ['open', 'queued'].includes(this.conversationStatus)
+        ['open', 'queued', 'proxied'].includes(this.conversationStatus)
       );
     },
   },
