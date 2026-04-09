@@ -32,6 +32,9 @@
       "queued": {
         "TEXT": "Queued"
       },
+      "proxied": {
+        "TEXT": "Proxied"
+      },
       "snoozed": {
         "TEXT": "Snoozed"
       },

@@ -11,6 +11,7 @@ export default {
     PENDING: 'pending',
     SNOOZED: 'snoozed',
     QUEUED: 'queued',
+    PROXIED: 'proxied',
     ALL: 'all',
   },
   SORT_BY_TYPE: {

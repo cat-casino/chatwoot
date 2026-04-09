@@ -32,6 +32,7 @@ module Api::V1::Accounts::ConversationsControllerProxy
       contact_inbox = find_or_create_contact_inbox(widget_conversation.contact, target_inbox)
       operator_conversation = create_operator_conversation(widget_conversation, target_inbox, contact_inbox)
       link_conversations(widget_conversation, operator_conversation)
+      widget_conversation.update!(status: :proxied)
     end
 
     operator_conversation

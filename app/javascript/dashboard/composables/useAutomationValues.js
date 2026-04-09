@@ -49,6 +49,10 @@ export default function useAutomationValues() {
         name: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.queued.TEXT'),
       },
       {
+        id: 'proxied',
+        name: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.proxied.TEXT'),
+      },
+      {
         id: 'snoozed',
         name: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.snoozed.TEXT'),
       },
