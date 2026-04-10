@@ -31,8 +31,9 @@ module TelegramContactMerge
   end
 
   def project_and_email(contact)
-    project      = contact.custom_attributes&.dig('project').to_s.downcase.strip
-    email        = contact.custom_attributes&.dig('user_email').to_s.downcase.strip
+    project = contact.custom_attributes&.dig('project').to_s.downcase.strip
+    email   = contact.custom_attributes&.dig('user_email').to_s.downcase.strip
+    email   = contact.custom_attributes&.dig('_email').to_s.downcase.strip if email.blank?
     [project.presence, email.presence]
   end
 
@@ -48,7 +49,7 @@ module TelegramContactMerge
            .where(contact_inboxes: { inbox_id: inbox_ids })
            .where.not(id: @contact.id)
            .where(
-             "LOWER(contacts.email) = :email OR LOWER(custom_attributes->>'user_email') = :email",
+             "LOWER(contacts.email) = :email OR LOWER(custom_attributes->>'user_email') = :email OR LOWER(custom_attributes->>'_email') = :email",
              email: source_email
            )
            .first.tap do |t|
