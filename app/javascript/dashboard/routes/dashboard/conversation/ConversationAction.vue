@@ -10,7 +10,7 @@ import { CONVERSATION_PRIORITY } from '../../../../shared/constants/messages';
 import { CONVERSATION_EVENTS } from '../../../helper/AnalyticsHelper/events';
 import { useTrack } from 'dashboard/composables';
 import NextButton from 'dashboard/components-next/button/Button.vue';
-import { useInboxes } from 'dashboard/composables/useInboxes';
+import { useAllInboxes } from 'dashboard/composables/useAllInboxes';
 
 export default {
   components: {
@@ -27,10 +27,13 @@ export default {
   },
   setup() {
     const { agentsList } = useAgentsList();
-    const { inboxes } = useInboxes();
+    const { allInboxes, fetchAllInboxes } = useAllInboxes();
+
+    fetchAllInboxes();
+
     return {
       agentsList,
-      inboxes,
+      allInboxes,
     };
   },
   data() {
@@ -116,7 +119,7 @@ export default {
     },
     assignedInbox: {
       get() {
-        return this.inboxes.find(i => i.id === this.currentChat.inbox_id);
+        return this.allInboxes.find(i => i.id === this.currentChat.inbox_id);
       },
       set(inbox) {
         const conversationId = this.currentChat.id;
@@ -136,7 +139,7 @@ export default {
     },
 
     inboxesList() {
-      return this.inboxes.map(inbox => ({
+      return this.allInboxes.map(inbox => ({
         id: inbox.id,
         name: inbox.name,
       }));
