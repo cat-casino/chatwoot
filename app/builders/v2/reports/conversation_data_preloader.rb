@@ -71,7 +71,9 @@ class V2::Reports::ConversationDataPreloader
   end
 
   def fetch_conversation_participants(conversation_ids)
-    ConversationParticipant.joins(:user).where(conversation_id: conversation_ids).pluck(:conversation_id, 'users.id', 'users.name')
+    ConversationParticipant.joins(:user).where(conversation_id: conversation_ids).order('conversation_participants.updated_at ASC').pluck(
+      :conversation_id, 'users.id', 'users.name'
+    )
   end
 
   def collect_agents_for_conversation(conv_id, participants_by_conv)
