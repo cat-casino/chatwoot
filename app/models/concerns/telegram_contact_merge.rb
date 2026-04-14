@@ -15,26 +15,19 @@ module TelegramContactMerge
   def attempt_telegram_contact_merge
     return unless telegram_contact?(@contact)
 
-    project, source_email = project_and_email(@contact)
-    return unless project && source_email
+    project = @contact.custom_attributes&.dig('project').to_s.downcase.strip.presence
+    return unless project
 
     account = Current.account
     inbox_ids = inbox_ids_for_project(account, project)
     return if inbox_ids.blank?
 
-    target = find_target_contact(account, inbox_ids, source_email)
+    target = find_target_contact(account, inbox_ids)
     return unless target
 
     merge_contacts(target, @contact)
   rescue StandardError => e
     Rails.logger.error "[TG MERGE] ERROR: #{e.class} #{e.message}\n#{e.backtrace.first(5).join("\n")}"
-  end
-
-  def project_and_email(contact)
-    project = contact.custom_attributes&.dig('project').to_s.downcase.strip
-    email   = contact.custom_attributes&.dig('user_email').to_s.downcase.strip
-    email   = contact.custom_attributes&.dig('_email').to_s.downcase.strip if email.blank?
-    [project.presence, email.presence]
   end
 
   def inbox_ids_for_project(account, project)
@@ -43,15 +36,24 @@ module TelegramContactMerge
     ids
   end
 
-  def find_target_contact(account, inbox_ids, source_email)
+  def find_target_contact(account, inbox_ids)
+    user_email = @contact.custom_attributes&.dig('user_email').to_s.downcase.strip.presence
+    priv_email = @contact.custom_attributes&.dig('_email').to_s.downcase.strip.presence
+    email      = @contact.email.to_s.downcase.strip.presence
+
+    return nil unless user_email || priv_email || email
+
     account.contacts
            .joins(:contact_inboxes)
            .where(contact_inboxes: { inbox_id: inbox_ids })
            .where.not(id: @contact.id)
-           .where(
-             "LOWER(contacts.email) = :email OR LOWER(custom_attributes->>'user_email') = :email OR LOWER(custom_attributes->>'_email') = :email",
-             email: source_email
-           )
+           .where(<<~SQL, user_email: user_email, priv_email: priv_email, email: email)
+             (:user_email IS NOT NULL AND LOWER(custom_attributes->>'user_email') = :user_email)
+             OR (:user_email IS NOT NULL AND LOWER(contacts.email) = :user_email)
+             OR (:priv_email IS NOT NULL AND LOWER(custom_attributes->>'_email') = :priv_email)
+             OR (:priv_email IS NOT NULL AND LOWER(contacts.email) = :priv_email)
+             OR (:email IS NOT NULL AND LOWER(contacts.email) = :email)
+           SQL
            .first.tap do |t|
              Rails.logger.info t ? "[TG MERGE] Found target #{t.id}" : '[TG MERGE] No target found'
            end
