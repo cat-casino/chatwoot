@@ -15,7 +15,8 @@ Rails.application.config.to_prepare do
         return unless @inbox&.channel
 
         bot_name = @inbox.channel.try(:bot_name)
-        prefix = bot_name.to_s.delete_prefix('@').split('_').first
+        parts = bot_name.to_s.delete_prefix('@').split('_')
+        prefix = parts.map { |p| p.gsub(/casino/i, '') }.reject(&:empty?).first
         return if prefix.blank?
 
         @contact.custom_attributes ||= {}
