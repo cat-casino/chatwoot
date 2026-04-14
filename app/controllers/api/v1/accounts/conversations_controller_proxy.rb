@@ -21,7 +21,7 @@ module Api::V1::Accounts::ConversationsControllerProxy
 
   def find_and_authorize_inbox
     inbox = Current.account.inboxes.find(params[:inbox_id])
-    authorize inbox, :show?
+    authorize inbox, :index_all?
     inbox
   end
 
@@ -65,9 +65,9 @@ module Api::V1::Accounts::ConversationsControllerProxy
     source_conversation.messages.chat.order(:created_at).each do |message|
       next if message.content.blank? && message.attachments.empty?
       next if target_conversation.messages.exists?(source_id: "history_#{message.id}")
-  
+
       is_private = message.outgoing?
-  
+
       mirrored = target_conversation.messages.new(
         account_id: target_conversation.account_id,
         inbox_id: target_conversation.inbox_id,
@@ -79,10 +79,10 @@ module Api::V1::Accounts::ConversationsControllerProxy
       )
       mirrored.save!(validate: false)
       mirrored.update_column(:created_at, message.created_at)
-  
+
       message.attachments.each do |attachment|
         next unless attachment.file.attached?
-  
+
         new_att = mirrored.attachments.create!(
           account_id: mirrored.account_id,
           file_type: attachment.file_type
@@ -92,9 +92,9 @@ module Api::V1::Accounts::ConversationsControllerProxy
       rescue StandardError => e
         Rails.logger.error("copy_message_history: failed to mirror attachment #{attachment.id}: #{e.message}")
       end
-  
+
       mirrored.reload
-  
+
       Rails.configuration.dispatcher.dispatch(
         Events::Types::MESSAGE_CREATED,
         Time.zone.now,
@@ -121,10 +121,16 @@ module Api::V1::Accounts::ConversationsControllerProxy
     ci = ContactInboxBuilder.new(contact: contact, inbox: inbox, source_id: SecureRandom.uuid).perform
 
     unless ci
+      ci = ContactInbox.find_by(contact: contact, inbox: inbox)
+      return ci if ci
+
       ci = ContactInbox.new(contact: contact, inbox: inbox, source_id: SecureRandom.uuid)
       ci.save(validate: false)
     end
 
     ci
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.warn("find_or_create_contact_inbox: validation failed (#{e.message}), falling back to find")
+    ContactInbox.find_by(contact: contact, inbox: inbox)
   end
 end
