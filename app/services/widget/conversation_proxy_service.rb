@@ -69,6 +69,41 @@ class Widget::ConversationProxyService
     end
   end
 
+  def mirror_outgoing_to_widget
+    linked_id = @conversation.additional_attributes&.dig('linked_conversation_id')
+    return if linked_id.blank?
+
+    widget_conversation = Current.account.conversations.find_by(id: linked_id)
+    return if widget_conversation.blank?
+    return unless widget_conversation.status.to_sym == :proxied
+
+    content = @message_params[:content]
+    source_message_id = @message_params[:source_message_id]
+
+    return if content.blank?
+    return if widget_conversation.messages.exists?(source_id: "operator_mirror_#{source_message_id}")
+
+    mirrored = widget_conversation.messages.new(
+      account_id: widget_conversation.account_id,
+      inbox_id: widget_conversation.inbox_id,
+      message_type: :outgoing,
+      content: content,
+      sender: @message_params[:sender],
+      private: false,
+      source_id: "operator_mirror_#{source_message_id}"
+    )
+    mirrored.save!(validate: false)
+
+    Rails.configuration.dispatcher.dispatch(
+      Events::Types::MESSAGE_CREATED,
+      Time.zone.now,
+      message: mirrored,
+      performed_by: nil
+    )
+  rescue StandardError => e
+    Rails.logger.error("mirror_outgoing_to_widget failed: #{e.message}")
+  end
+
   def linked_conversation
     linked_id = @widget_conversation.additional_attributes&.dig('linked_conversation_id')
     return if linked_id.blank?

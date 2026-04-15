@@ -10,53 +10,110 @@ module MessageWidgetProxy
   def mirror_outgoing_to_linked_widget_conversation
     return unless outgoing?
     return unless sender.is_a?(User)
-    return if Thread.current[:mirroring_widget_message]
+    return if source_id&.start_with?('mirror_')
+    return if source_id&.start_with?('pending_mirror_')
 
-    widget_conversation = find_widget_conversation_linked_to(conversation)
-    return if widget_conversation.blank?
+    proxy_conversation = find_proxy_conversation_linked_to(conversation)
+    return if proxy_conversation.blank?
+    return unless proxy_conversation.proxied?
     return if content.blank? && attachments.empty?
 
-    Thread.current[:mirroring_widget_message] = true
+    return if mirrored_message_exists?(proxy_conversation, id)
 
-    params = {
+    mirror_message_to_conversation(proxy_conversation, additional_attributes: { 'mirrored_from_message_id' => id.to_s })
+
+    telegram_conversation = find_source_telegram_conversation_linked_to(proxy_conversation)
+    mirror_message_to_conversation(
+      telegram_conversation,
+      additional_attributes: { 'mirrored_from_message_id' => id.to_s },
+      skip_if_already_mirrored: true
+    )
+
+  rescue StandardError => e
+    Rails.logger.error("MessageWidgetProxy mirror_outgoing_to_linked_widget_conversation failed: #{e.class} - #{e.message}")
+  end
+
+  def mirror_message_to_conversation(target_conversation, additional_attributes:, skip_if_already_mirrored: false)
+    return if target_conversation.blank?
+    return if content.blank? && attachments.empty?
+    return if skip_if_already_mirrored && mirrored_message_exists?(target_conversation, id)
+
+    mirrored = target_conversation.messages.new(
+      account_id: target_conversation.account_id,
+      inbox_id: target_conversation.inbox_id,
+      message_type: :outgoing,
       content: content,
-      message_type: 'outgoing',
-      source_id: nil
-    }
+      sender: sender,
+      additional_attributes: additional_attributes,
+      source_id: "pending_mirror_#{id}"
+    )
+    mirrored.save!(validate: false)
 
-    mirrored = Messages::MessageBuilder.new(sender, widget_conversation, params).perform
+    mirror_attachments_to_message(mirrored)
 
+    mirrored.update_column(:source_id, nil)
+    mirrored.reload
+
+    if mirrored.attachments.present?
+      ::SendReplyJob.set(wait: 2.seconds).perform_later(mirrored.id)
+    else
+      ::SendReplyJob.perform_later(mirrored.id)
+    end
+
+    Rails.configuration.dispatcher.dispatch(
+      Events::Types::MESSAGE_CREATED,
+      Time.zone.now,
+      message: mirrored,
+      performed_by: nil
+    )
+
+    mirrored
+  end
+
+  def mirror_attachments_to_message(target_message)
     attachments.each do |original_attachment|
       next unless original_attachment.file.attached?
 
-      new_att = mirrored.attachments.create!(
-        account_id: mirrored.account_id,
+      new_att = target_message.attachments.create!(
+        account_id: target_message.account_id,
         file_type: original_attachment.file_type
       )
       new_att.file.attach(original_attachment.file.blob)
       new_att.save!
     rescue StandardError => e
-      Rails.logger.error("MessageWidgetProxy: failed to mirror attachment: #{e.message}")
+      Rails.logger.error("MessageWidgetProxy: failed to mirror attachment #{original_attachment.id}: #{e.message}")
     end
-  rescue StandardError => e
-    Rails.logger.error(
-      "MessageWidgetProxy mirror_outgoing_to_linked_widget_conversation failed: #{e.class} - #{e.message}"
-    )
-  ensure
-    Thread.current[:mirroring_widget_message] = nil
   end
 
-  def find_widget_conversation_linked_to(source_conversation)
-    attrs = source_conversation.additional_attributes || {}
+  def mirrored_message_exists?(target_conversation, source_message_id)
+    target_conversation.messages.where(
+      "additional_attributes->>'mirrored_from_message_id' = ?", source_message_id.to_s
+    ).exists?
+  end
 
+  def find_proxy_conversation_linked_to(source_conversation)
+    attrs = source_conversation.additional_attributes || {}
     linked_id = attrs['linked_conversation_id']
     return nil if linked_id.blank?
 
     linked = Conversation.find_by(id: linked_id)
     return nil if linked.blank?
+    return nil if linked.id == source_conversation.id
 
-    return linked if linked.inbox.channel_type == 'Channel::WebWidget'
+    linked
+  end
 
+  def find_source_telegram_conversation_linked_to(widget_conversation)
+    tg_id = widget_conversation.additional_attributes&.dig('source_telegram_conversation_id')
+    return nil if tg_id.blank?
+
+    tg_conversation = Conversation.find_by(id: tg_id)
+    return nil if tg_conversation.blank?
+    return nil unless tg_conversation.inbox.channel_type == 'Channel::Telegram'
+
+    tg_conversation
+  rescue StandardError => e
+    Rails.logger.error("MessageWidgetProxy: failed to find source telegram conversation #{tg_id}: #{e.message}")
     nil
   end
 end

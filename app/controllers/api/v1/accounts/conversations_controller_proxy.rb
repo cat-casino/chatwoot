@@ -52,9 +52,22 @@ module Api::V1::Accounts::ConversationsControllerProxy
   end
 
   def link_conversations(widget_conversation, operator_conversation)
-    widget_conversation.update!(
-      additional_attributes: merged_attributes(widget_conversation, operator_conversation.id)
-    )
+    tg_conversation = find_telegram_conversation_for(widget_conversation.contact)
+
+    widget_attrs = merged_attributes(widget_conversation, operator_conversation.id)
+    widget_attrs['source_telegram_conversation_id'] = tg_conversation.id if tg_conversation
+
+    widget_conversation.update!(additional_attributes: widget_attrs)
+  end
+
+  def find_telegram_conversation_for(contact)
+    contact.conversations
+           .joins(inbox: :channel_telegram)
+           .where(status: [:open, :pending])
+           .order(created_at: :desc)
+           .first
+  rescue StandardError
+    nil
   end
 
   def merged_attributes(conversation, linked_id)
@@ -118,19 +131,25 @@ module Api::V1::Accounts::ConversationsControllerProxy
     existing = ContactInbox.find_by(contact: contact, inbox: inbox)
     return existing if existing
 
-    ci = ContactInboxBuilder.new(contact: contact, inbox: inbox, source_id: SecureRandom.uuid).perform
-
-    unless ci
-      ci = ContactInbox.find_by(contact: contact, inbox: inbox)
+    begin
+      ci = ContactInboxBuilder.new(contact: contact, inbox: inbox, source_id: SecureRandom.uuid).perform
       return ci if ci
-
-      ci = ContactInbox.new(contact: contact, inbox: inbox, source_id: SecureRandom.uuid)
-      ci.save(validate: false)
+    rescue StandardError => e
+      Rails.logger.warn("ContactInboxBuilder failed (#{e.message}), falling back")
     end
 
+    existing = ContactInbox.find_by(contact: contact, inbox: inbox)
+    return existing if existing
+
+    ci = ContactInbox.new(
+      contact: contact,
+      inbox: inbox,
+      source_id: SecureRandom.uuid
+    )
+    ci.save!(validate: false)
     ci
-  rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.warn("find_or_create_contact_inbox: validation failed (#{e.message}), falling back to find")
+  rescue StandardError => e
+    Rails.logger.error("find_or_create_contact_inbox: completely failed: #{e.message}")
     ContactInbox.find_by(contact: contact, inbox: inbox)
   end
 end
