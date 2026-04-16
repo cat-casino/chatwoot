@@ -460,7 +460,8 @@
         "CONTACT_NAME": "Контакт",
         "AGENT_NAME": "Назначенный сотрудник",
         "RATING": "Оценка",
-        "FEEDBACK_TEXT": "Комментарий отзыва"
+        "FEEDBACK_TEXT": "Комментарий отзыва",
+        "CHAT_CREATED_AT": "Дата создания чата"
       }
     },
     "METRIC": {
