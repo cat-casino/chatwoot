@@ -70,6 +70,9 @@ const tableData = computed(() => {
     createdAgo: dynamicTime(response.created_at),
     createdAt: messageStamp(response.created_at, 'LLL d yyyy, h:mm a'),
     createdAtTimestamp: new Date(response.created_at).getTime(),
+    chatCreatedAgo: dynamicTime(response.chat_created_at),
+    chatCreatedAt: messageStamp(response.chat_created_at, 'LLL d yyyy, h:mm a'),
+    chatCreatedAtTimestamp: response.chat_created_at,
     _original: response,
   }));
 });
@@ -88,6 +91,17 @@ const columns = computed(() => {
         const nameA = rowA.original.contact?.name?.toLowerCase() || '';
         const nameB = rowB.original.contact?.name?.toLowerCase() || '';
         return nameA.localeCompare(nameB);
+      },
+      enableSorting: true,
+    }),
+    columnHelper.accessor('chatCreatedAt', {
+      header: t('CSAT_REPORTS.TABLE.HEADER.CHAT_CREATED_AT'),
+      size: 220,
+      sortingFn: (rowA, rowB) => {
+        return (
+          (rowA.original.chatCreatedAtTimestamp || 0) -
+          (rowB.original.chatCreatedAtTimestamp || 0)
+        );
       },
       enableSorting: true,
     }),
@@ -242,6 +256,14 @@ const getSortIcon = header => {
                 />
               </td>
               <td class="py-4 px-5">
+                <span
+                  class="text-sm text-n-slate-12"
+                  :title="row.original.chatCreatedAt"
+                >
+                  {{ row.original.chatCreatedAt || '—' }}
+                </span>
+              </td>
+              <td class="py-4 px-5">
                 <div
                   class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg"
                   :style="{
@@ -293,7 +315,7 @@ const getSortIcon = header => {
               v-if="showExpandableRows && isRowExpanded(row.original.id)"
               class="!border-t-0"
             >
-              <td colspan="5" class="p-0 !border-t-0">
+              <td colspan="6" class="p-0 !border-t-0">
                 <CsatExpandedRow :response="row.original._original" />
               </td>
             </tr>

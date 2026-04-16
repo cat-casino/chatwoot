@@ -269,6 +269,7 @@ en:
         agent_name: Agent Name
         rating: Rating
         feedback: Feedback Comment
+        chat_created_at: Chat created date
         recorded_at: Recorded date
         review_notes: Review Notes
   notifications:

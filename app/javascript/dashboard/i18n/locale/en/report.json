@@ -480,6 +480,7 @@
         "AGENT_NAME": "Agent",
         "RATING": "Rating",
         "FEEDBACK_TEXT": "Feedback comment",
+        "CHAT_CREATED_AT": "Chat created date",
         "CONVERSATION": "Conversation",
         "CUSTOMER": "Customer",
         "RESPONSE": "Response",

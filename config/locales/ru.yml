@@ -255,6 +255,7 @@ ru:
         agent_name: Имя оператора
         rating: Оценка
         feedback: Комментарий к отзыву
+        chat_created_at: Дата создания чата       
         recorded_at: Дата записи
         review_notes: Ревью
   notifications:
