@@ -418,6 +418,11 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.REPORTS_BOT'),
           to: accountScopedRoute('bot_reports'),
         },
+        {
+          name: 'Reports Queued Customers',
+          label: t('SIDEBAR.REPORTS_QUEUED_CUSTOMERS'),
+          to: accountScopedRoute('queued_customers_reports'),
+        },
       ],
     },
     {

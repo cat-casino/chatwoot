@@ -29,6 +29,7 @@ class V2::Reports::ConversationRowBuilder
 
   def extra_fields(conversation)
     csat = conversation.csat_survey_response
+    queue = conversation.conversation_queue
 
     {
       chat_resolution: conversation_duration(conversation),
@@ -37,11 +38,21 @@ class V2::Reports::ConversationRowBuilder
       agent_chat_duration: total_agent_chat_duration(conversation),
       csat_score: csat&.rating,
       csat_feedback: csat ? clean(csat.feedback_message) : nil,
+      queue_entered_at: queue&.queued_at,
+      queue_accepted_at: queue&.assigned_at,
+      queue_left_at: queue&.left_at,
+      queue_exit_reason: queue_exit_reason(queue),
       labels: conversation.cached_label_list_array.map { |l| clean(l) },
       custom_attributes: clean_hash(conversation.custom_attributes || {}),
       contact_additional_attributes: clean_hash(conversation.contact.additional_attributes || {}),
       contact_custom_attributes: clean_hash(conversation.contact.custom_attributes || {})
     }
+  end
+
+  def queue_exit_reason(queue)
+    return nil if queue.blank?
+
+    queue.exit_reason
   end
 
   def participating_agents_names(conversation)

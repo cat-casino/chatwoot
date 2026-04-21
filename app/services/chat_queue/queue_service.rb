@@ -36,8 +36,8 @@ class ChatQueue::QueueService
     assign_entry(entry, agent)
   end
 
-  def remove_from_queue(conversation)
-    ChatQueue::Queue::RemovalService.new(account: account, conversation: conversation).remove!
+  def remove_from_queue(conversation, reason: :other)
+    ChatQueue::Queue::RemovalService.new(account: account, conversation: conversation, reason: reason).remove!
   end
 
   def online_agents_list
