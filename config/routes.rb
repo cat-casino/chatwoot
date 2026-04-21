@@ -455,6 +455,7 @@ Rails.application.routes.draw do
               get :conversations_summary
               get :conversation_traffic
               get :bot_metrics
+              get :queued_customers
               get :overview_summary
               get :bot_summary_download
               get :all_conversation_metrics_download

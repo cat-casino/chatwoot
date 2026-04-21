@@ -22,10 +22,9 @@ class ChatQueue::Queue::EntryService
     Rails.logger.info("[QUEUE][add][conv=#{cid}] Creating or updating queue entry")
 
     queue_record = ConversationQueue.find_or_initialize_by(conversation: conversation)
+    is_requeue = queue_record.persisted? && !queue_record.waiting?
 
-    if queue_record.persisted? && !queue_record.waiting?
-      Rails.logger.info("[QUEUE][add][conv=#{cid}] Re-queueing existing record (was #{queue_record.status})")
-    end
+    Rails.logger.info("[QUEUE][add][conv=#{cid}] Re-queueing existing record (was #{queue_record.status})") if is_requeue
 
     queue_record.assign_attributes(
       account: account,
@@ -37,6 +36,8 @@ class ChatQueue::Queue::EntryService
     )
 
     queue_record.save!
+
+    QueueStatistic.increment_queued(account.id) unless is_requeue
 
     return if conversation.queued?
 

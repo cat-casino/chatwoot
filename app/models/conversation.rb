@@ -344,11 +344,7 @@ class Conversation < ApplicationRecord
     update_column(:resolved_at, Time.current)
     update_column(:waiting_since, nil)
     # rubocop:enable Rails/SkipsModelValidations
-
-    return unless conversation_queue&.waiting?
-
-    ChatQueue::QueueService.new(account: account).remove_from_queue(self)
-  end
+end
 
   def ensure_snooze_until_reset
     self.snoozed_until = nil unless snoozed?
@@ -455,13 +451,15 @@ class Conversation < ApplicationRecord
 
   def remove_from_queue_if_status_changed
     return unless saved_change_to_status?
-
+  
     old_status, new_status = saved_change_to_status
-
+  
     return unless old_status == 'queued' && new_status != 'queued'
-
+  
+    reason = new_status == 'resolved' ? :resolved : :other
+  
     ChatQueue::QueueService.new(account: account)
-                           .remove_from_queue(self)
+                           .remove_from_queue(self, reason: reason)
   end
 
   # creating db triggers

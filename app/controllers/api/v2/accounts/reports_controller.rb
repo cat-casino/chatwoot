@@ -103,6 +103,10 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     render json: report_service.build_bot_metrics
   end
 
+  def queued_customers
+    render json: V2::Reports::QueuedCustomersBuilder.new(Current.account, queued_customers_params).build
+  end
+
   private
 
   def valid_agent_activity_params?
@@ -132,5 +136,14 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
   def check_authorization
     authorize :report, :view?
+  end
+
+  def queued_customers_params
+    {
+      since: params[:since],
+      until: params[:until],
+      team_ids: params[:team_ids]&.reject(&:blank?),
+      inbox_ids: params[:inbox_ids]&.reject(&:blank?)
+    }.compact
   end
 end

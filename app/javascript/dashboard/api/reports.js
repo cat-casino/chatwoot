@@ -136,6 +136,24 @@ class ReportsAPI extends ApiClient {
     return axios.get(`${this.url}/bot_metrics`, { params });
   }
 
+  getQueuedCustomers({ from, to, inboxIds = [], teamIds = [] } = {}) {
+    const params = {
+      since: from,
+      until: to,
+      timezone_offset: getTimeOffset(),
+    };
+
+    if (teamIds.length > 0) {
+      params.team_ids = teamIds;
+    }
+
+    if (inboxIds.length > 0) {
+      params.inbox_ids = inboxIds;
+    }
+
+    return axios.get(`${this.url}/queued_customers`, { params });
+  }
+
   getAgentActivityCSV({
     since: since,
     until: until,

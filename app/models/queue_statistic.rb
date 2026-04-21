@@ -31,7 +31,6 @@ class QueueStatistic < ApplicationRecord
 
   def self.update_statistics_for(account_id, wait_time_seconds:, assigned: false, left: false)
     stat = find_or_initialize_by(account_id: account_id, date: Date.current)
-    stat.total_queued += 1
     stat.total_assigned += 1 if assigned
     stat.total_left += 1 if left
 
@@ -41,6 +40,12 @@ class QueueStatistic < ApplicationRecord
       stat.max_wait_time_seconds = [stat.max_wait_time_seconds, wait_time_seconds].max
     end
 
+    stat.save!
+  end
+
+  def self.increment_queued(account_id)
+    stat = find_or_initialize_by(account_id: account_id, date: Date.current)
+    stat.total_queued += 1
     stat.save!
   end
 end
