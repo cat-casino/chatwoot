@@ -10,6 +10,7 @@ module MessageWidgetProxy
   def mirror_outgoing_to_linked_widget_conversation
     return unless outgoing?
     return unless sender.is_a?(User)
+    return if private?
     return if source_id&.start_with?('mirror_')
     return if source_id&.start_with?('pending_mirror_')
 
