@@ -194,7 +194,7 @@ export default {
           component: BotReports,
         },
         {
-          path: 'queued-customers',
+          path: 'queued_customers',
           name: 'queued_customers_reports',
           meta,
           component: QueuedCustomersReports,

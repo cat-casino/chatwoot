@@ -10,6 +10,8 @@ import BaseHeatmap from './components/heatmaps/BaseHeatmap.vue';
 import ReportHeader from './components/ReportHeader.vue';
 import ReportFilterSelector from './components/FilterSelector.vue';
 
+const POLL_INTERVAL = 30_000;
+
 const filters = ref({
   from: 0,
   to: 0,
@@ -17,6 +19,8 @@ const filters = ref({
   selectedTeam: [],
 });
 const loading = ref(false);
+const pollTimer = ref(null);
+
 const queuedReport = ref({
   summary: {
     queued_customers: 0,
@@ -111,9 +115,9 @@ const waitingTimeCollection = computed(() => {
   };
 });
 
-const fetchQueuedCustomers = async () => {
+const fetchQueuedCustomers = async ({ showLoader = false } = {}) => {
   if (!filters.value.from) return;
-  loading.value = true;
+  if (showLoader) loading.value = true;
   try {
     const response = await ReportsAPI.getQueuedCustomers({
       from: filters.value.from,
@@ -125,8 +129,22 @@ const fetchQueuedCustomers = async () => {
   } catch (error) {
     useAlert('Failed to fetch queued customers report');
   } finally {
-    loading.value = false;
+    if (showLoader) loading.value = false;
   }
+};
+
+const stopPolling = () => {
+  if (pollTimer.value) {
+    clearInterval(pollTimer.value);
+    pollTimer.value = null;
+  }
+};
+
+const startPolling = () => {
+  stopPolling();
+  pollTimer.value = setInterval(() => {
+    fetchQueuedCustomers({ showLoader: false });
+  }, POLL_INTERVAL);
 };
 
 const onFilterChange = payload => {
@@ -136,15 +154,20 @@ const onFilterChange = payload => {
     selectedInbox: payload.selectedInbox || [],
     selectedTeam: payload.selectedTeam || [],
   };
-  fetchQueuedCustomers();
+  fetchQueuedCustomers({ showLoader: true });
+  startPolling();
 };
 
 onMounted(() => {
-  emitter.on('fetch_conversation_stats', fetchQueuedCustomers);
+  emitter.on('fetch_conversation_stats', () =>
+    fetchQueuedCustomers({ showLoader: false })
+  );
+  startPolling();
 });
 
 onUnmounted(() => {
   emitter.off('fetch_conversation_stats', fetchQueuedCustomers);
+  stopPolling();
 });
 </script>
 
@@ -159,6 +182,7 @@ onUnmounted(() => {
       :show-agents-filter="false"
       :show-group-by-filter="false"
       :show-business-hours-switch="false"
+      show-time-range-filter
       show-team-filter
       show-inbox-filter
       @filter-change="onFilterChange"
@@ -182,9 +206,17 @@ onUnmounted(() => {
           </p>
         </div>
       </div>
-      <div class="mt-4 h-72">
+      <div class="relative mt-4 h-72">
+        <div
+          v-if="loading"
+          class="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-n-solid-2/70 backdrop-blur-[2px]"
+        >
+          <div
+            class="h-5 w-5 animate-spin rounded-full border-2 border-n-slate-11 border-t-transparent"
+          />
+        </div>
         <BarChart
-          v-if="!loading && queuedReport.daily.length"
+          v-if="queuedReport.daily.length"
           :collection="queueFlowCollection"
         />
       </div>
@@ -205,9 +237,17 @@ onUnmounted(() => {
           </p>
         </div>
       </div>
-      <div class="mt-4 h-72">
+      <div class="relative mt-4 h-72">
+        <div
+          v-if="loading"
+          class="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-n-solid-2/70 backdrop-blur-[2px]"
+        >
+          <div
+            class="h-5 w-5 animate-spin rounded-full border-2 border-n-slate-11 border-t-transparent"
+          />
+        </div>
         <BarChart
-          v-if="!loading && queuedReport.daily.length"
+          v-if="queuedReport.daily.length"
           :collection="waitingTimeCollection"
         />
       </div>
