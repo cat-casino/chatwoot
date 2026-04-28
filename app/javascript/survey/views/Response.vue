@@ -32,6 +32,8 @@ export default {
       inboxName: '',
       displayType: CSAT_DISPLAY_TYPES.EMOJI,
       messageContent: '',
+      likeIcon: '👍',
+      dislikeIcon: '👎',
     };
   },
   computed: {
@@ -46,6 +48,12 @@ export default {
       return this.surveyDetails && this.surveyDetails.feedback_message;
     },
     isButtonDisabled() {
+      if (
+        this.isLikeDislikeType &&
+        this.selectedRating === this.badRatingValue
+      ) {
+        return !this.feedbackMessage?.trim();
+      }
       return !this.selectedRating;
     },
     isEmojiType() {
@@ -54,10 +62,22 @@ export default {
     isStarType() {
       return this.displayType === CSAT_DISPLAY_TYPES.STAR;
     },
+    isLikeDislikeType() {
+      return this.displayType === CSAT_DISPLAY_TYPES.LIKE_DISLIKE;
+    },
+    goodRatingValue() {
+      return 5;
+    },
+    badRatingValue() {
+      return 1;
+    },
     shouldShowBanner() {
       return this.isRatingSubmitted || this.errorMessage;
     },
     enableFeedbackForm() {
+      if (this.isLikeDislikeType) {
+        return !!this.selectedRating;
+      }
       return !this.isFeedbackSubmitted && this.isRatingSubmitted;
     },
     shouldShowErrorMessage() {
@@ -72,6 +92,18 @@ export default {
       }
       return this.$t('SURVEY.RATING.SUCCESS_MESSAGE');
     },
+    shouldHideRatingInput() {
+      return this.isRatingSubmitted && !this.isLikeDislikeType;
+    },
+    feedbackPlaceholder() {
+      if (
+        this.isLikeDislikeType &&
+        this.selectedRating === this.badRatingValue
+      ) {
+        return this.$t('SURVEY.FEEDBACK.DISLIKE_PLACEHOLDER');
+      }
+      return this.$t('SURVEY.FEEDBACK.PLACEHOLDER');
+    },
   },
   async mounted() {
     this.getSurveyDetails();
@@ -79,7 +111,9 @@ export default {
   methods: {
     selectRating(rating) {
       this.selectedRating = rating;
-      this.updateSurveyDetails();
+      if (!this.isLikeDislikeType || rating === this.goodRatingValue) {
+        this.updateSurveyDetails();
+      }
     },
     sendFeedback(message) {
       this.feedbackMessage = message;
@@ -171,28 +205,53 @@ export default {
           :message="message"
         />
         <label
-          v-if="!isRatingSubmitted"
+          v-if="!shouldHideRatingInput"
           class="mb-4 text-base font-medium text-n-slate-11"
         >
           {{ $t('SURVEY.RATING.LABEL') }}
         </label>
         <Rating
-          v-if="isEmojiType"
+          v-if="isEmojiType && !shouldHideRatingInput"
           :selected-rating="selectedRating"
           @select-rating="selectRating"
         />
         <StarRating
-          v-if="isStarType"
+          v-if="isStarType && !shouldHideRatingInput"
           :selected-rating="selectedRating"
           :is-disabled="isRatingSubmitted"
           class="[&>button>span]:text-4xl !justify-start !px-0"
           @select-rating="selectRating"
         />
+        <div
+          v-if="isLikeDislikeType"
+          class="flex items-center gap-6 text-4xl mb-6"
+        >
+          <button
+            class="grayscale opacity-60 transition-all hover:grayscale-0 hover:opacity-100"
+            :class="{
+              '!grayscale-0 !opacity-100': selectedRating === goodRatingValue,
+            }"
+            @click="selectRating(goodRatingValue)"
+          >
+            {{ likeIcon }}
+          </button>
+          <button
+            class="grayscale opacity-60 transition-all hover:grayscale-0 hover:opacity-100"
+            :class="{
+              '!grayscale-0 !opacity-100': selectedRating === badRatingValue,
+            }"
+            @click="selectRating(badRatingValue)"
+          >
+            {{ dislikeIcon }}
+          </button>
+        </div>
         <Feedback
           v-if="enableFeedbackForm"
+          :key="`feedback-${selectedRating}`"
           :is-updating="isUpdating"
           :is-button-disabled="isButtonDisabled"
-          :selected-rating="selectedRating"
+          :initial-feedback="feedbackMessage"
+          :placeholder="feedbackPlaceholder"
           @send-feedback="sendFeedback"
         />
       </div>

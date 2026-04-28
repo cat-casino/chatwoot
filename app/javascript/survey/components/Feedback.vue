@@ -15,11 +15,23 @@ export default {
       type: Boolean,
       default: false,
     },
+    isButtonDisabled: {
+      type: Boolean,
+      default: false,
+    },
+    initialFeedback: {
+      type: String,
+      default: '',
+    },
+    placeholder: {
+      type: String,
+      default: '',
+    },
   },
   emits: ['sendFeedback'],
   data() {
     return {
-      feedback: '',
+      feedback: this.initialFeedback,
     };
   },
   methods: {
@@ -38,10 +50,10 @@ export default {
     <TextArea
       v-model="feedback"
       class="my-5"
-      :placeholder="$t('SURVEY.FEEDBACK.PLACEHOLDER')"
+      :placeholder="placeholder || $t('SURVEY.FEEDBACK.PLACEHOLDER')"
     />
     <div class="flex items-center float-right font-medium">
-      <CustomButton @click="onClick">
+      <CustomButton :disabled="isButtonDisabled || isUpdating" @click="onClick">
         <Spinner v-if="isUpdating" class="p-0" />
         {{ $t('SURVEY.FEEDBACK.BUTTON_TEXT') }}
       </CustomButton>
