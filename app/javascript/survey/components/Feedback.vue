@@ -28,7 +28,7 @@ export default {
       default: '',
     },
   },
-  emits: ['sendFeedback'],
+  emits: ['sendFeedback', 'updateFeedback'],
   data() {
     return {
       feedback: this.initialFeedback,
@@ -37,6 +37,9 @@ export default {
   methods: {
     onClick() {
       this.$emit('sendFeedback', this.feedback);
+    },
+    onInput(value) {
+      this.$emit('updateFeedback', value);
     },
   },
 };
@@ -51,6 +54,7 @@ export default {
       v-model="feedback"
       class="my-5"
       :placeholder="placeholder || $t('SURVEY.FEEDBACK.PLACEHOLDER')"
+      @update:model-value="onInput"
     />
     <div class="flex items-center float-right font-medium">
       <CustomButton :disabled="isButtonDisabled || isUpdating" @click="onClick">

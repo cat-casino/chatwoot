@@ -111,6 +111,7 @@ export default {
   methods: {
     selectRating(rating) {
       this.selectedRating = rating;
+      this.feedbackMessage = '';
       if (!this.isLikeDislikeType || rating === this.goodRatingValue) {
         this.updateSurveyDetails();
       }
@@ -118,6 +119,9 @@ export default {
     sendFeedback(message) {
       this.feedbackMessage = message;
       this.updateSurveyDetails();
+    },
+    updateFeedbackMessage(message) {
+      this.feedbackMessage = message;
     },
     async getSurveyDetails() {
       this.isLoading = true;
@@ -253,6 +257,7 @@ export default {
           :initial-feedback="feedbackMessage"
           :placeholder="feedbackPlaceholder"
           @send-feedback="sendFeedback"
+          @update-feedback="updateFeedbackMessage"
         />
       </div>
       <div class="mb-3">
