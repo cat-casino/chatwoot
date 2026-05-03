@@ -23,12 +23,19 @@ class V2::Reports::BotMetricsBuilder
     @selected_inbox_ids ||= params[:inbox_ids]&.reject(&:blank?)
   end
 
-  def bot_conversations
-    @bot_conversations ||= begin
-      scope = account.conversations.where(created_at: range)
-      scope = scope.where(inbox_id: selected_inbox_ids) if selected_inbox_ids.present?
-      scope
+  def bot_inbox_ids
+    @bot_inbox_ids ||= begin
+      ids = AgentBotInbox
+            .where(account_id: account.id, status: :active)
+            .pluck(:inbox_id)
+      selected_inbox_ids.present? ? ids & selected_inbox_ids.map(&:to_i) : ids
     end
+  end
+
+  def bot_conversations
+    @bot_conversations ||= account.conversations
+                                  .where(created_at: range)
+                                  .where(inbox_id: bot_inbox_ids)
   end
 
   def bot_messages
