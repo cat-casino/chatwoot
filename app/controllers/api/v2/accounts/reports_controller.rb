@@ -130,7 +130,8 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
       since: params[:since],
       until: params[:until],
       timezone_offset: params[:timezone_offset],
-      inbox_ids: params[:inbox_ids]&.reject(&:blank?)
+      inbox_ids: params[:inbox_ids]&.reject(&:blank?),
+      user_ids: params[:user_ids]&.reject(&:blank?)
     }
   end
 

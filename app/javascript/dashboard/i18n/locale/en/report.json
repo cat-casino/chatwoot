@@ -462,7 +462,8 @@
         "RATINGS": "Search ratings"
       },
       "AGENTS": {
-        "LABEL": "Agent"
+        "LABEL": "Agent",
+        "PLACEHOLDER": "Select agent"
       },
       "INBOXES": {
         "LABEL": "Inbox"

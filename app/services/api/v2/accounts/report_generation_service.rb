@@ -126,7 +126,8 @@ class Api::V2::Accounts::ReportGenerationService
       since: range[:current][:since],
       until: range[:current][:until],
       timezone_offset: params[:timezone_offset],
-      inbox_ids: params[:inbox_ids]&.reject(&:blank?)
+      inbox_ids: params[:inbox_ids]&.reject(&:blank?),
+      user_ids: params[:user_ids]&.reject(&:blank?)
     )
   end
 
@@ -135,7 +136,8 @@ class Api::V2::Accounts::ReportGenerationService
       since: range[:previous][:since],
       until: range[:previous][:until],
       timezone_offset: params[:timezone_offset],
-      inbox_ids: params[:inbox_ids]&.reject(&:blank?)
+      inbox_ids: params[:inbox_ids]&.reject(&:blank?),
+      user_ids: params[:user_ids]&.reject(&:blank?)
     )
   end
 

@@ -30,7 +30,18 @@ class V2::Reports::Timeseries::AverageReportBuilder < V2::Reports::Timeseries::B
   end
 
   def object_scope
-    scope.reporting_events.where(name: event_name, created_at: range, account_id: account.id)
+    base = scope.reporting_events.where(name: event_name, created_at: range, account_id: account.id)
+    apply_reporting_event_filters(base)
+  end
+
+  def apply_reporting_event_filters(relation)
+    return relation unless params[:type].to_sym == :account
+
+    relation = relation.joins(:conversation).where(conversations: { inbox_id: params[:inbox_ids] }) if params[:inbox_ids].present?
+
+    relation = relation.where(user_id: params[:user_ids]) if params[:user_ids].present?
+
+    relation
   end
 
   def reporting_events

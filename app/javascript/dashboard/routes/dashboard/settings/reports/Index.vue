@@ -38,6 +38,8 @@ export default {
       to: 0,
       groupBy: GROUP_BY_FILTER[1],
       businessHours: false,
+      selectedAgents: [],
+      selectedInboxes: [],
       timeRange: {
         since: '00:00',
         until: '23:59',
@@ -78,7 +80,15 @@ export default {
       });
     },
     getRequestPayload() {
-      const { from, to, groupBy, businessHours, timeRange } = this;
+      const {
+        from,
+        to,
+        groupBy,
+        businessHours,
+        timeRange,
+        selectedAgents,
+        selectedInboxes,
+      } = this;
 
       return {
         from,
@@ -86,10 +96,12 @@ export default {
         groupBy: groupBy?.period,
         businessHours,
         timeRange,
+        userIds: selectedAgents.map(agent => agent.id),
+        inboxIds: selectedInboxes.map(inbox => inbox.id),
       };
     },
     downloadConversationReports(option) {
-      const { from, to, timeRange } = this;
+      const { from, to, timeRange, selectedAgents, selectedInboxes } = this;
       const format = option?.value || option || 'csv';
       const fileName = generateFileName({
         type: 'conversation',
@@ -104,14 +116,26 @@ export default {
         fileName,
         businessHours: this.businessHours,
         timeRange,
+        userIds: selectedAgents.map(agent => agent.id),
+        inboxIds: selectedInboxes.map(inbox => inbox.id),
       });
     },
-    onFilterChange({ from, to, groupBy, businessHours, timeRange }) {
+    onFilterChange({
+      from,
+      to,
+      groupBy,
+      businessHours,
+      timeRange,
+      selectedAgents,
+      selectedInbox,
+    }) {
       this.from = from;
       this.to = to;
       this.groupBy = groupBy;
       this.businessHours = businessHours;
       this.timeRange = timeRange;
+      this.selectedAgents = selectedAgents || [];
+      this.selectedInboxes = selectedInbox || [];
       this.fetchAllData();
 
       useTrack(REPORTS_EVENTS.FILTER_REPORT, {
@@ -133,7 +157,8 @@ export default {
   </ReportHeader>
   <div class="flex flex-col gap-3">
     <ReportFilterSelector
-      :show-agents-filter="false"
+      show-agents-filter
+      show-inbox-filter
       show-group-by-filter
       show-time-range-filter
       @filter-change="onFilterChange"

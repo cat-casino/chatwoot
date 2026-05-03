@@ -17,6 +17,7 @@ class ReportsAPI extends ApiClient {
     groupBy,
     businessHours,
     inboxIds,
+    userIds,
   }) {
     const params = {
       metric,
@@ -32,11 +33,23 @@ class ReportsAPI extends ApiClient {
     if (inboxIds && inboxIds.length > 0) {
       params['inbox_ids[]'] = inboxIds;
     }
+    if (userIds && userIds.length > 0) {
+      params['user_ids[]'] = userIds;
+    }
 
     return axios.get(`${this.url}`, { params });
   }
 
-  getSummary(since, until, type, id, groupBy, businessHours, inboxIds) {
+  getSummary(
+    since,
+    until,
+    type,
+    id,
+    groupBy,
+    businessHours,
+    userIds,
+    inboxIds
+  ) {
     const params = {
       since,
       until,
@@ -49,6 +62,9 @@ class ReportsAPI extends ApiClient {
 
     if (inboxIds && inboxIds.length > 0) {
       params['inbox_ids[]'] = inboxIds;
+    }
+    if (userIds && userIds.length > 0) {
+      params['user_ids[]'] = userIds;
     }
 
     return axios.get(`${this.url}/summary`, { params });
