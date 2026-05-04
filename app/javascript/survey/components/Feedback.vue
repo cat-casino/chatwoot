@@ -15,10 +15,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    isButtonDisabled: {
-      type: Boolean,
-      default: false,
-    },
     initialFeedback: {
       type: String,
       default: '',
@@ -57,7 +53,7 @@ export default {
       @update:model-value="onInput"
     />
     <div class="flex items-center float-right font-medium">
-      <CustomButton :disabled="isButtonDisabled || isUpdating" @click="onClick">
+      <CustomButton :disabled="isUpdating" @click="onClick">
         <Spinner v-if="isUpdating" class="p-0" />
         {{ $t('SURVEY.FEEDBACK.BUTTON_TEXT') }}
       </CustomButton>
