@@ -48,12 +48,6 @@ export default {
       return this.surveyDetails && this.surveyDetails.feedback_message;
     },
     isButtonDisabled() {
-      if (
-        this.isLikeDislikeType &&
-        this.selectedRating === this.badRatingValue
-      ) {
-        return !this.feedbackMessage?.trim();
-      }
       return !this.selectedRating;
     },
     isEmojiType() {
@@ -96,12 +90,6 @@ export default {
       return this.isRatingSubmitted && !this.isLikeDislikeType;
     },
     feedbackPlaceholder() {
-      if (
-        this.isLikeDislikeType &&
-        this.selectedRating === this.badRatingValue
-      ) {
-        return this.$t('SURVEY.FEEDBACK.DISLIKE_PLACEHOLDER');
-      }
       return this.$t('SURVEY.FEEDBACK.PLACEHOLDER');
     },
   },
@@ -112,9 +100,7 @@ export default {
     selectRating(rating) {
       this.selectedRating = rating;
       this.feedbackMessage = '';
-      if (!this.isLikeDislikeType || rating === this.goodRatingValue) {
-        this.updateSurveyDetails();
-      }
+      this.updateSurveyDetails();
     },
     sendFeedback(message) {
       this.feedbackMessage = message;
@@ -253,7 +239,6 @@ export default {
           v-if="enableFeedbackForm"
           :key="`feedback-${selectedRating}`"
           :is-updating="isUpdating"
-          :is-button-disabled="isButtonDisabled"
           :initial-feedback="feedbackMessage"
           :placeholder="feedbackPlaceholder"
           @send-feedback="sendFeedback"

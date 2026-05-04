@@ -55,13 +55,7 @@ export default {
         ?.feedback_message;
     },
     isButtonDisabled() {
-      if (
-        this.isLikeDislikeType &&
-        this.selectedRating === this.badRatingValue
-      ) {
-        return !this.feedback?.trim();
-      }
-      return !(this.selectedRating && this.feedback);
+      return !this.selectedRating;
     },
     textColor() {
       return getContrastingTextColor(this.widgetColor);
@@ -89,24 +83,20 @@ export default {
     badRatingValue() {
       return 1;
     },
-    isFeedbackRequired() {
-      return (
-        this.isLikeDislikeType && this.selectedRating === this.badRatingValue
-      );
-    },
     shouldShowFeedbackInput() {
       if (this.isLikeDislikeType) {
-        return this.selectedRating === this.badRatingValue;
+        return !!this.selectedRating;
       }
       return !this.isFeedbackSubmitted;
     },
     feedbackPlaceholder() {
-      if (!this.isLikeDislikeType) {
-        return this.$t('CSAT.PLACEHOLDER');
+      if (
+        this.isLikeDislikeType &&
+        this.selectedRating === this.badRatingValue
+      ) {
+        return this.$t('CSAT.DISLIKE_PLACEHOLDER');
       }
-      return this.isFeedbackRequired
-        ? this.$t('CSAT.DISLIKE_PLACEHOLDER')
-        : this.$t('CSAT.PLACEHOLDER');
+      return this.$t('CSAT.PLACEHOLDER');
     },
     shouldShowChangeHint() {
       return this.allowUpdate && this.isLikeDislikeType;
@@ -150,7 +140,6 @@ export default {
         this.isUpdating = false;
       }
     },
-
     selectRating(rating) {
       this.selectedRating = rating.value;
       this.onSubmit();
@@ -168,9 +157,7 @@ export default {
       if (isChangingFromBadToGood) {
         this.feedback = '';
       }
-      if (value === this.goodRatingValue) {
-        this.onSubmit();
-      }
+      this.onSubmit();
     },
   },
 };
