@@ -2,12 +2,14 @@
 #
 # Table name: canned_responses
 #
-#  id         :integer          not null, primary key
-#  content    :text
-#  short_code :string
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  account_id :integer          not null
+#  id            :integer          not null, primary key
+#  content       :text
+#  short_code    :string
+#  visibility    :integer          default(0), not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  account_id    :integer          not null
+#  created_by_id :integer
 #
 
 class CannedResponse < ApplicationRecord
@@ -20,7 +22,7 @@ class CannedResponse < ApplicationRecord
   validates :content, presence: true
   validates :short_code, presence: true
   validates :account, presence: true
-  validates :short_code, uniqueness: { scope: :account_id }
+  validate :short_code_uniqueness
 
   scope :order_by_search, lambda { |search|
     short_code_starts_with = sanitize_sql_array(['WHEN short_code ILIKE ? THEN 1', "#{search}%"])
@@ -52,4 +54,26 @@ class CannedResponse < ApplicationRecord
 
     where(visibility: :public_response).or(where(id: private_accessible_ids))
   }
+
+  private
+
+  def short_code_uniqueness
+    duplicate = if private_response?
+                  CannedResponse.where(
+                    account_id: account_id,
+                    short_code: short_code,
+                    visibility: :private_response,
+                    created_by_id: created_by_id
+                  ).where.not(id: id).exists?
+
+                else
+                  CannedResponse.where(
+                    account_id: account_id,
+                    short_code: short_code,
+                    visibility: :public_response
+                  ).where.not(id: id).exists?
+
+                end
+    errors.add(:short_code, :taken) if duplicate
+  end
 end

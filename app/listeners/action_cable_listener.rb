@@ -126,6 +126,8 @@ class ActionCableListener < BaseListener
     conversation, account = extract_conversation_and_account(event)
     tokens = user_tokens(account, conversation.inbox.members)
 
+    tokens << conversation.assignee.pubsub_token if conversation.assignee&.pubsub_token
+
     broadcast(account, tokens, ASSIGNEE_CHANGED, conversation.push_event_data)
   end
 

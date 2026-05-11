@@ -77,16 +77,17 @@ class ChatQueue::ForceTransferService
     previous_assignee = conversation.assignee
 
     ActiveRecord::Base.transaction do
+      Current.executed_by = current_user
+
       remove_from_queue_if_needed
 
       conversation.update!(
         assignee: target_agent,
         status: :open,
-        updated_at: Time.current
+        last_activity_at: Time.current
       )
 
       log_transfer(previous_assignee, target_agent)
-
       send_transfer_notification(target_agent)
     end
 
