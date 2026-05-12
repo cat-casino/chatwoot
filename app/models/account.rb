@@ -44,6 +44,7 @@ class Account < ApplicationRecord
         'auto_resolve_pending_message': { 'type': %w[string null] },
         'audio_transcriptions': { 'type': %w[boolean null] },
         'auto_resolve_label': { 'type': %w[string null] },
+        'busy_to_offline_timeout': { 'type': %w[integer null], 'minimum': 1 },
         'conversation_required_attributes': {
           'type': %w[array null],
           'items': { 'type': 'string' }
@@ -98,6 +99,7 @@ class Account < ApplicationRecord
 
   store_accessor :settings, :audio_transcriptions, :auto_resolve_label, :conversation_required_attributes
   store_accessor :settings, :captain_models, :captain_features
+  store_accessor :settings, :busy_to_offline_timeout
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async

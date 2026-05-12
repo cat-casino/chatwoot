@@ -29,3 +29,4 @@ json.queue_enabled @account.queue_enabled
 json.queue_message @account.queue_message
 json.active_chat_limit_enabled @account.active_chat_limit_enabled
 json.active_chat_limit_value @account.active_chat_limit_value
+json.busy_to_offline_timeout @account.busy_to_offline_timeout

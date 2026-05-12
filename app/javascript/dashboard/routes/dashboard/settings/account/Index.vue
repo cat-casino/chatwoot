@@ -53,6 +53,8 @@ export default {
       activeChatLimitValue: null,
       queueEnabled: false,
       queueMessage: '',
+      busyToOfflineEnabled: false,
+      busyToOfflineTimeout: null,
     };
   },
   validations: {
@@ -125,6 +127,7 @@ export default {
           queue_message,
           active_chat_limit_enabled,
           active_chat_limit_value,
+          busy_to_offline_timeout,
         } = this.getAccount(this.accountId);
 
         this.$root.$i18n.locale = this.uiSettings?.locale || locale;
@@ -138,6 +141,8 @@ export default {
         this.queueMessage = queue_message;
         this.activeChatLimitEnabled = active_chat_limit_enabled;
         this.activeChatLimitValue = active_chat_limit_value;
+        this.busyToOfflineEnabled = !!busy_to_offline_timeout;
+        this.busyToOfflineTimeout = busy_to_offline_timeout;
       } catch (error) {
         // Ignore error
       }
@@ -159,6 +164,9 @@ export default {
           queue_message: this.queueMessage,
           active_chat_limit_enabled: this.activeChatLimitEnabled,
           active_chat_limit_value: this.activeChatLimitValue,
+          busy_to_offline_timeout: this.busyToOfflineEnabled
+            ? this.busyToOfflineTimeout
+            : null,
         });
         // If user locale is set, update the locale with user locale
         if (this.uiSettings?.locale) {
@@ -288,6 +296,24 @@ export default {
                 type="number"
                 class="w-full"
                 :placeholder="$t('GENERAL_SETTINGS.FORM.LIMIT_VALUE')"
+              />
+            </div>
+          </div>
+          <div class="mb-2 text-sm font-medium leading-6 text-n-slate-12">
+            <div class="flex items-center justify-between">
+              <span>{{
+                $t('GENERAL_SETTINGS.FORM.BUSY_TO_OFFLINE_ENABLED')
+              }}</span>
+              <NextSwitch v-model="busyToOfflineEnabled" />
+            </div>
+            <div v-if="busyToOfflineEnabled" class="mt-2">
+              <NextInput
+                v-model.number="busyToOfflineTimeout"
+                type="number"
+                class="w-full"
+                :placeholder="
+                  $t('GENERAL_SETTINGS.FORM.BUSY_TO_OFFLINE_TIMEOUT')
+                "
               />
             </div>
           </div>
