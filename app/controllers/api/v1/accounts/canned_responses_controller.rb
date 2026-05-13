@@ -37,11 +37,33 @@ class Api::V1::Accounts::CannedResponsesController < Api::V1::Accounts::BaseCont
   end
 
   def destroy
-    @canned_response.destroy!
+    if @canned_response.private_response?
+      remove_user_from_scopes_or_destroy
+    else
+      @canned_response.destroy!
+    end
     head :ok
   end
 
   private
+
+  def remove_user_from_scopes_or_destroy
+    scope = @canned_response.canned_response_scopes.find do |s|
+      s.user_ids.include?(current_user.id)
+    end
+  
+    if scope
+      updated_user_ids = scope.user_ids - [current_user.id]
+  
+      if updated_user_ids.empty?
+        scope.destroy!
+      else
+        scope.update!(user_ids: updated_user_ids)
+      end
+    end
+  
+    @canned_response.destroy! if @canned_response.reload.canned_response_scopes.empty?
+  end
 
   def find_or_init_canned_response
     visibility = canned_response_base_params[:visibility]
