@@ -28,12 +28,15 @@ Rails.application.config.after_initialize do
       account = @conversation.account
       return unless account
 
+      contact = @conversation.contact
+      return unless contact
+
       ensure_attribute_exists(account)
 
-      existing = @conversation.custom_attributes || {}
+      existing = contact.custom_attributes || {}
       return if existing[TELEGRAM_CUSTOM_ATTRIBUTE_KEY].present?
 
-      @conversation.update!(
+      contact.update!(
         custom_attributes: existing.merge(TELEGRAM_CUSTOM_ATTRIBUTE_KEY => TELEGRAM_CHANNEL_VALUE)
       )
     rescue StandardError => e
@@ -44,7 +47,7 @@ Rails.application.config.after_initialize do
       return if CustomAttributeDefinition.exists?(
         account: account,
         attribute_key: TELEGRAM_CUSTOM_ATTRIBUTE_KEY,
-        attribute_model: :conversation_attribute
+        attribute_model: :contact_attribute
       )
 
       CustomAttributeDefinition.create!(
@@ -52,7 +55,7 @@ Rails.application.config.after_initialize do
         attribute_key: TELEGRAM_CUSTOM_ATTRIBUTE_KEY,
         attribute_display_name: 'Channel Type',
         attribute_display_type: :text,
-        attribute_model: :conversation_attribute
+        attribute_model: :contact_attribute
       )
     rescue ActiveRecord::RecordNotUnique
     end
