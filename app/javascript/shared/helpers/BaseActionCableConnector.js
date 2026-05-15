@@ -30,7 +30,9 @@ class BaseActionCableConnector {
       }
     );
     this.app = app;
-    this.events = {};
+    this.events = {
+      'agent.updated': this.onAgentUpdated,
+    };
     this.reconnectTimer = null;
     this.isAValidEvent = () => true;
     this.triggerPresenceInterval = () => {
@@ -78,6 +80,13 @@ class BaseActionCableConnector {
   disconnect() {
     this.consumer.disconnect();
   }
+
+  onAgentUpdated = data => {
+    const currentUserId = this.app.$store.getters.getCurrentUserID;
+    if (data.id !== currentUserId) return;
+
+    this.app.$store.dispatch('inboxes/get');
+  };
 
   onReceived = ({ event, data } = {}) => {
     if (this.isAValidEvent(data)) {
