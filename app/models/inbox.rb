@@ -55,6 +55,7 @@ class Inbox < ApplicationRecord
   validates :timezone, inclusion: { in: TZInfo::Timezone.all_identifiers }
   validates :out_of_office_message, length: { maximum: Limits::OUT_OF_OFFICE_MESSAGE_MAX_LENGTH }
   validates :greeting_message, length: { maximum: Limits::GREETING_MESSAGE_MAX_LENGTH }
+  validates :public_name, length: { maximum: 255 }, allow_blank: true
   validate :ensure_valid_max_assignment_limit
 
   belongs_to :account
@@ -206,6 +207,10 @@ class Inbox < ApplicationRecord
 
   def auto_assignment_v2_enabled?
     account.feature_enabled?('assignment_v2')
+  end
+
+  def display_name
+    public_name.presence || name
   end
 
   private
