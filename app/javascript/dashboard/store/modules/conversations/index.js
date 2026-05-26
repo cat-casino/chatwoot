@@ -182,7 +182,7 @@ export const mutations = {
     });
   },
 
-  [types.ADD_MESSAGE]({ allConversations, selectedChatId }, message) {
+  [types.ADD_MESSAGE]({ allConversations }, message) {
     const { conversation_id: conversationId } = message;
     const [chat] = getSelectedChatConversation({
       allConversations,
@@ -195,7 +195,6 @@ export const mutations = {
       chat.messages[pendingMessageIndex] = message;
     } else {
       chat.messages.push(message);
-      chat.timestamp = message.created_at;
 
       const isAgentOrContact =
         message.message_type === 0 ||
@@ -203,14 +202,12 @@ export const mutations = {
         message.message_type === 'incoming' ||
         message.message_type === 'outgoing';
 
-      if (isAgentOrContact) {
-        chat.last_non_activity_message = message;
+      if (!message.private) {
+        chat.timestamp = message.created_at;
       }
 
-      const { conversation: { unread_count: unreadCount = 0 } = {} } = message;
-      chat.unread_count = unreadCount;
-      if (selectedChatId === conversationId) {
-        emitter.emit(BUS_EVENTS.SCROLL_TO_MESSAGE);
+      if (isAgentOrContact && !message.private) {
+        chat.last_non_activity_message = message;
       }
     }
   },
