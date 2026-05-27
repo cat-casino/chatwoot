@@ -75,6 +75,8 @@ module Api::V1::Accounts::ConversationsControllerProxy
   end
 
   def copy_message_history(source_conversation, target_conversation)
+    Thread.current[:copying_message_history] = true
+
     source_conversation.messages.chat.order(:created_at).each do |message|
       next if message.content.blank? && message.attachments.empty?
       next if target_conversation.messages.exists?(source_id: "history_#{message.id}")
@@ -88,10 +90,11 @@ module Api::V1::Accounts::ConversationsControllerProxy
         content: message.content,
         sender: message.sender,
         private: is_private,
-        source_id: "history_#{message.id}"
+        source_id: "history_#{message.id}",
+        created_at: message.created_at,
+        updated_at: message.updated_at
       )
       mirrored.save!(validate: false)
-      mirrored.update_column(:created_at, message.created_at)
 
       message.attachments.each do |attachment|
         next unless attachment.file.attached?
@@ -117,6 +120,8 @@ module Api::V1::Accounts::ConversationsControllerProxy
     rescue StandardError => e
       Rails.logger.error("copy_message_history: failed to mirror message #{message.id}: #{e.message}")
     end
+  ensure
+    Thread.current[:copying_message_history] = nil
   end
 
   def build_response(inbox, _operator_conversation)
