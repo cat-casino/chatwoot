@@ -359,6 +359,9 @@ class Message < ApplicationRecord
   end
 
   def execute_after_create_commit_callbacks
+    return if Thread.current[:copying_message_history]
+    return if conversation.blank?
+
     # rails issue with order of active record callbacks being executed https://github.com/rails/rails/issues/20911
     reopen_conversation
     set_conversation_activity
@@ -459,8 +462,9 @@ class Message < ApplicationRecord
 
   def set_conversation_activity
     return if private?
+
     # rubocop:disable Rails/SkipsModelValidations
-  conversation.update_columns(last_activity_at: created_at, updated_at: Time.current)
+    conversation.update_columns(last_activity_at: created_at, updated_at: Time.current)
     # rubocop:enable Rails/SkipsModelValidations
   end
 
