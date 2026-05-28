@@ -125,13 +125,22 @@ export default {
         const conversationId = this.currentChat.id;
         const inboxId = inbox ? inbox.id : null;
 
-        this.$store.dispatch('updateConversation', {
-          ...this.currentChat,
-          inbox_id: inboxId,
-        });
-
         this.$store
           .dispatch('changeInbox', { conversationId, inboxId })
+          .then(() => {
+            return this.$store.dispatch('getConversation', conversationId);
+          })
+          .then(() => {
+            const conversation = this.$store.getters.getAllConversations.find(
+              c => c.id === conversationId
+            );
+            if (!conversation) return null;
+
+            delete conversation.dataFetched;
+            return this.$store.dispatch('setActiveChat', {
+              data: conversation,
+            });
+          })
           .then(() => {
             useAlert(`Источник изменён на ${inbox.name}`);
           });
