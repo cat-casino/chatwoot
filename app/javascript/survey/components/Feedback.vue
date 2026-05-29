@@ -23,6 +23,14 @@ export default {
       type: String,
       default: '',
     },
+    isButtonDisabled: {
+      type: Boolean,
+      default: false,
+    },
+    selectedRating: {
+      type: Number,
+      default: null,
+    },
   },
   emits: ['sendFeedback', 'updateFeedback'],
   data() {
@@ -30,8 +38,16 @@ export default {
       feedback: this.initialFeedback,
     };
   },
+  computed: {
+    isSubmitDisabled() {
+      return (
+        this.isButtonDisabled || !this.selectedRating || !this.feedback.trim()
+      );
+    },
+  },
   methods: {
     onClick() {
+      if (this.isSubmitDisabled) return;
       this.$emit('sendFeedback', this.feedback);
     },
     onInput(value) {

@@ -203,4 +203,27 @@ class V2::Reports::BaseSummaryBuilder
   def use_business_hours?
     ActiveModel::Type::Boolean.new.cast(params[:business_hours])
   end
+  
+  def data_source
+    @data_source ||= Reports::DataSource.for(
+      account: account,
+      metric: nil,
+      dimension_type: summary_dimension_type,
+      dimension_id: nil,
+      scope: nil,
+      range: range,
+      group_by: 'day',
+      timezone_offset: params[:timezone_offset],
+      business_hours: params[:business_hours]
+    )
+  end
+
+  def summary_dimension_type
+    {
+      'account_id' => 'account',
+      'user_id' => 'agent',
+      'inbox_id' => 'inbox',
+      'conversations.team_id' => 'team'
+    }.fetch(group_by_key.to_s)
+  end
 end

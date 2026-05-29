@@ -15,12 +15,9 @@ class V2::Reports::Conversations::BaseReportBuilder
   ].freeze
 
   def builder_class(metric)
-    case metric
-    when *AVG_METRICS
-      V2::Reports::Timeseries::AverageReportBuilder
-    when *COUNT_METRICS
-      V2::Reports::Timeseries::CountReportBuilder
-    end
+    return unless Reports::ReportMetricRegistry.supported?(metric)
+
+    V2::Reports::Timeseries::ReportBuilder
   end
 
   def log_invalid_metric

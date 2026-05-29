@@ -32,6 +32,8 @@ class Account < ApplicationRecord
   include Featurable
   include CacheKeys
   include CaptainFeaturable
+  include AccountEmailRateLimitable
+  include AccountSettingsSchema
 
   SETTINGS_PARAMS_SCHEMA = {
     'type': 'object',
@@ -88,18 +90,27 @@ class Account < ApplicationRecord
 
   validates :name, presence: true
   validates :active_chat_limit_value, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
+  # `domain` is the inbound email domain used to construct reply addresses
+  # (see `inbound_email_domain`). Do not repurpose it for a website or any
+  # non-mail-related domain.
   validates :domain, length: { maximum: 100 }
   validates_with JsonSchemaValidator,
                  schema: SETTINGS_PARAMS_SCHEMA,
                  attribute_resolver: ->(record) { record.settings }
+  validate :validate_reporting_timezone
+  validate :validate_support_email_format, if: :will_save_change_to_support_email?
 
   store_accessor :settings, :auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting,
                  :auto_resolve_message_agent, :auto_resolve_message_client, :auto_resolve_split_reasons,
                  :auto_resolve_pending_after, :auto_resolve_pending_message
 
-  store_accessor :settings, :audio_transcriptions, :auto_resolve_label, :conversation_required_attributes
+  store_accessor :settings, :audio_transcriptions, :auto_resolve_label
   store_accessor :settings, :captain_models, :captain_features
   store_accessor :settings, :busy_to_offline_timeout
+  store_accessor :settings, :reporting_timezone
+  store_accessor :settings, :keep_pending_on_bot_failure
+  store_accessor :settings, :captain_auto_resolve_mode
+  include AccountCaptainAutoResolve
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
@@ -157,6 +168,7 @@ class Account < ApplicationRecord
 
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
+  after_update_commit :clear_unread_conversation_counts_cache, if: :saved_change_to_feature_conversation_unread_counts?
   after_destroy :remove_account_sequences
 
   def agents
@@ -215,11 +227,28 @@ class Account < ApplicationRecord
   def active_chat_limit
     active_chat_limit_value
   end
+  
+  def onboarding_step
+    step = custom_attributes['onboarding_step']
+    return nil if step.blank?
+
+    enrichment_key = format(Redis::Alfred::ACCOUNT_ONBOARDING_ENRICHMENT, account_id: id)
+    Redis::Alfred.exists?(enrichment_key) ? 'enrichment' : step
+  end
+
+  def reset_cache_keys
+    super
+    clear_unread_conversation_counts_cache
+  end
 
   private
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
+  end
+
+  def clear_unread_conversation_counts_cache
+    ::Conversations::UnreadCounts::Store.clear_account!(id)
   end
 
   trigger.after(:insert).for_each(:row) do
@@ -232,6 +261,22 @@ class Account < ApplicationRecord
 
   def validate_limit_keys
     # method overridden in enterprise module
+  end
+
+  def validate_reporting_timezone
+    return if reporting_timezone.blank? || ActiveSupport::TimeZone[reporting_timezone].present?
+
+    errors.add(:reporting_timezone, I18n.t('errors.account.reporting_timezone.invalid'))
+  end
+
+  def validate_support_email_format
+    value = attributes['support_email']
+    return if value.blank?
+
+    parsed = Mail::Address.new(value).address
+    errors.add(:support_email, I18n.t('errors.account.support_email.invalid')) if parsed.blank?
+  rescue Mail::Field::ParseError, Mail::Field::IncompleteParseError
+    errors.add(:support_email, I18n.t('errors.account.support_email.invalid'))
   end
 
   def remove_account_sequences

@@ -23,6 +23,10 @@ class ConversationApi extends ApiClient {
   forceTransfer(conversationId) {
     return axios.post(`${this.url}/${conversationId}/force_transfer`);
   }
+  
+  getUnreadCounts() {
+    return axios.get(`${this.url}/unread_counts`);
+  }
 }
 
 export default new ConversationApi();

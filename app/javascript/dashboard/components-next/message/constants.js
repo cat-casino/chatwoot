@@ -52,6 +52,7 @@ export const ATTACHMENT_TYPES = {
   EMBED: 'embed',
   IG_POST: 'ig_post',
   IG_STORY: 'ig_story',
+  IG_STORY_REPLY: 'ig_story_reply',
 };
 
 export const CONTENT_TYPES = {
@@ -87,5 +88,18 @@ export const VOICE_CALL_STATUS = {
 
 export const VOICE_CALL_DIRECTION = {
   INBOUND: 'inbound',
+  INCOMING: 'incoming',
+  OUTGOING: 'outgoing',
+  ONGOING: 'ongoing',
   OUTBOUND: 'outbound',
+};
+
+export const VOICE_CALL_OUTBOUND_INIT_STATUS = {
+  LOCKED: 'locked',
+  PERMISSION_REQUESTED: 'permission_requested',
+  PERMISSION_PENDING: 'permission_pending',
+};
+
+export const VOICE_CALL_END_REASON = {
+  AGENT_REJECTED: 'agent_rejected',
 };

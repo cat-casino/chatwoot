@@ -53,25 +53,7 @@ export default {
         return this.sortLabels(this.accountLabels);
       }
 
-      const searchLower = this.search.toLowerCase().trim();
-
-      if (searchLower.length < 2) {
-        const filtered = picoSearch(
-          this.accountLabels,
-          this.search,
-          ['title'],
-          {
-            threshold: 0.9,
-          }
-        );
-        return this.sortLabels(filtered);
-      }
-
-      const filtered = this.accountLabels.filter(label =>
-        label.title.toLowerCase().includes(searchLower)
-      );
-
-      return this.sortLabels(filtered);
+      return picoSearch(this.accountLabels, this.search, ['title'], { threshold: 0.9 });
     },
 
     noResult() {
