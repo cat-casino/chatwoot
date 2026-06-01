@@ -171,18 +171,14 @@ defineExpose({
         :use-grid-layout="false"
       >
         <template #control>
-          <div class="flex gap-2 flex-wrap w-full">
-            <div class="w-full">
-              <FilterSelector
-                show-time-range-filter
-                show-agents-filter
-                show-inbox-filter
-                show-team-filter
-                :show-business-hours-switch="false"
-                @filter-change="handleFilterChange"
-              />
-            </div>
-          </div>
+          <FilterSelector
+            show-time-range-filter
+            show-agents-filter
+            show-inbox-filter
+            show-team-filter
+            :show-business-hours-switch="false"
+            @filter-change="handleFilterChange"
+          />
         </template>
         <div
           v-for="(metric, name, index) in conversationMetrics"

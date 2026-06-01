@@ -8,7 +8,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Auth from '../../../../api/auth';
 import wootConstants from 'dashboard/constants/globals';
-import Multiselect from 'vue-multiselect';
+import TagInput from 'dashboard/components-next/taginput/TagInput.vue';
 import NextSwitch from 'next/switch/Switch.vue';
 
 const props = defineProps({
@@ -160,6 +160,52 @@ const availabilityStatuses = computed(() =>
   }))
 );
 
+const inboxMenuItems = computed(() =>
+  inboxList.value.map(inbox => ({
+    action: 'select',
+    value: String(inbox.id),
+    label: inbox.name,
+  }))
+);
+
+const teamMenuItems = computed(() =>
+  teamList.value.map(team => ({
+    action: 'select',
+    value: String(team.id),
+    label: team.name,
+  }))
+);
+
+const selectedInboxTags = computed(() =>
+  selectedInboxes.value.map(i => i.name)
+);
+
+const selectedTeamTags = computed(() =>
+  selectedTeams.value.map(team => team.name)
+);
+
+const handleInboxAdd = ({ value }) => {
+  const inbox = inboxList.value.find(i => String(i.id) === value);
+  if (inbox && !selectedInboxes.value.find(i => i.id === inbox.id)) {
+    selectedInboxes.value = [...selectedInboxes.value, inbox];
+  }
+};
+
+const handleInboxRemove = index => {
+  selectedInboxes.value = selectedInboxes.value.filter((_, i) => i !== index);
+};
+
+const handleTeamAdd = ({ value }) => {
+  const team = teamList.value.find(tm => String(tm.id) === value);
+  if (team && !selectedTeams.value.find(tm => tm.id === team.id)) {
+    selectedTeams.value = [...selectedTeams.value, team];
+  }
+};
+
+const handleTeamRemove = index => {
+  selectedTeams.value = selectedTeams.value.filter((_, i) => i !== index);
+};
+
 const editAgent = async () => {
   v$.value.$touch();
   if (v$.value.$invalid) return;
@@ -254,40 +300,40 @@ const resetPassword = async () => {
       </div>
 
       <div class="w-full">
-        {{ $t('PROFILE_SETTINGS.FORM.INBOX.LABEL') }}
-        <Multiselect
-          v-model="selectedInboxes"
-          :options="inboxList"
-          track-by="id"
-          label="name"
-          multiple
-          :close-on-select="false"
-          :clear-on-select="false"
-          hide-selected
-          :placeholder="$t('PROFILE_SETTINGS.FORM.INBOX.PLACEHOLDER')"
-          selected-label
-          :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
-          :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
-        />
+        <label>{{ $t('PROFILE_SETTINGS.FORM.INBOX.LABEL') }}</label>
+        <div
+          class="rounded-xl outline outline-1 -outline-offset-1 outline-n-weak hover:outline-n-strong px-2 py-2"
+        >
+          <TagInput
+            :model-value="selectedInboxTags"
+            :menu-items="inboxMenuItems"
+            show-dropdown
+            :allow-create="false"
+            :auto-open-dropdown="false"
+            :placeholder="$t('PROFILE_SETTINGS.FORM.INBOX.PLACEHOLDER')"
+            @add="handleInboxAdd"
+            @remove="handleInboxRemove"
+          />
+        </div>
       </div>
 
       <div class="w-full">
-        {{ $t('PROFILE_SETTINGS.FORM.TEAM.LABEL') }}
-        <Multiselect
-          v-model="selectedTeams"
-          :options="teamList"
-          track-by="id"
-          label="name"
-          multiple
-          :close-on-select="false"
-          :clear-on-select="false"
-          hide-selected
-          :placeholder="$t('PROFILE_SETTINGS.FORM.TEAM.PLACEHOLDER')"
-          selected-label
-          :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
-          :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
-        />
-        <label class="flex items-center justify-between">
+        <label>{{ $t('PROFILE_SETTINGS.FORM.TEAM.LABEL') }}</label>
+        <div
+          class="rounded-xl outline outline-1 -outline-offset-1 outline-n-weak hover:outline-n-strong px-2 py-2"
+        >
+          <TagInput
+            :model-value="selectedTeamTags"
+            :menu-items="teamMenuItems"
+            show-dropdown
+            :allow-create="false"
+            :auto-open-dropdown="false"
+            :placeholder="$t('PROFILE_SETTINGS.FORM.TEAM.PLACEHOLDER')"
+            @add="handleTeamAdd"
+            @remove="handleTeamRemove"
+          />
+        </div>
+        <label class="flex items-center justify-between mt-2">
           {{ $t('AGENT_MGMT.EDIT.FORM.ACTIVE_CHAT_LIMIT.ENABLE_LABEL') }}
           <NextSwitch v-model="activeChatLimitEnabled" />
         </label>
