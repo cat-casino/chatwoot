@@ -93,15 +93,33 @@ module MessageWidgetProxy
   end
 
   def find_proxy_conversation_linked_to(source_conversation)
-    attrs = source_conversation.additional_attributes || {}
-    linked_id = attrs['linked_conversation_id']
-    return nil if linked_id.blank?
-
-    linked = Conversation.find_by(id: linked_id)
-    return nil if linked.blank?
-    return nil if linked.id == source_conversation.id
-
-    linked
+    source_widget_id = source_conversation.additional_attributes&.dig('source_widget_id')
+    if source_widget_id.present?
+      widget = Conversation.find_by(id: source_widget_id)
+      return widget if widget&.proxied?
+    end
+  
+    visited = Set.new([source_conversation.id])
+    current = source_conversation
+  
+    loop do
+      attrs = current.additional_attributes || {}
+      linked_id = attrs['linked_conversation_id']
+      break if linked_id.blank? || visited.include?(linked_id)
+  
+      linked = Conversation.find_by(id: linked_id)
+      break if linked.blank?
+  
+      visited << current.id
+      current = linked
+  
+      break if current.proxied?
+    end
+  
+    return nil if current.id == source_conversation.id
+    return nil unless current.proxied?
+  
+    current
   end
 
   def find_source_telegram_conversation_linked_to(widget_conversation)

@@ -46,18 +46,36 @@ module Api::V1::Accounts::ConversationsControllerProxy
       inbox: target_inbox,
       contact: widget_conversation.contact,
       contact_inbox: contact_inbox,
-      additional_attributes: merged_attributes(widget_conversation, widget_conversation.id),
+      additional_attributes: merged_attributes(widget_conversation, widget_conversation.id).merge(
+        'is_proxy_operator_conversation' => true,
+        'source_widget_id' => find_root_widget(widget_conversation).id
+      ),
       custom_attributes: widget_conversation.custom_attributes
     )
   end
 
   def link_conversations(widget_conversation, operator_conversation)
     tg_conversation = find_telegram_conversation_for(widget_conversation.contact)
-
-    widget_attrs = merged_attributes(widget_conversation, operator_conversation.id)
+  
+    root_widget = find_root_widget(widget_conversation)
+  
+    widget_attrs = merged_attributes(root_widget, operator_conversation.id)
     widget_attrs['source_telegram_conversation_id'] = tg_conversation.id if tg_conversation
-
-    widget_conversation.update!(additional_attributes: widget_attrs)
+  
+    root_widget.update!(additional_attributes: widget_attrs)
+    
+    if root_widget.id != widget_conversation.id
+      widget_conversation.update!(
+        additional_attributes: merged_attributes(widget_conversation, operator_conversation.id)
+      )
+    end
+  end
+  
+  def find_root_widget(conversation)
+    widget_id = conversation.additional_attributes&.dig('source_widget_id')
+    return conversation if widget_id.blank?
+  
+    Conversation.find_by(id: widget_id) || conversation
   end
 
   def find_telegram_conversation_for(contact)
