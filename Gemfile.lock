@@ -1069,6 +1069,8 @@ DEPENDENCIES
   bullet
   bundle-audit
   byebug
+  caxlsx
+  caxlsx_rails
   cld3 (~> 3.7)
   climate_control
   commonmarker
@@ -1205,4 +1207,4 @@ RUBY VERSION
    ruby 3.4.4p34
 
 BUNDLED WITH
-   2.7.2
+   2.5.16
