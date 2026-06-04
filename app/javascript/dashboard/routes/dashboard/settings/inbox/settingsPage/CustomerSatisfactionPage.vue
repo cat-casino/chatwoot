@@ -48,6 +48,8 @@ const state = reactive({
   csatSurveyEnabled: false,
   displayType: 'emoji',
   message: '',
+  likeDislikeHintMessage: '',
+  likeDislikeHintEnabled: true,
   templateButtonText: 'Please rate us',
   surveyRuleOperator: 'contains',
   templateLanguage: 'en',
@@ -152,6 +154,8 @@ const initializeState = () => {
   const {
     display_type: displayType = CSAT_DISPLAY_TYPES.EMOJI,
     message = '',
+    like_dislike_hint_message: likeDislikeHintMessage = '',
+    like_dislike_hint_enabled: likeDislikeHintEnabled = true,
     button_text: buttonText = 'Please rate us',
     language = 'en',
     survey_rules: surveyRules = {},
@@ -159,6 +163,8 @@ const initializeState = () => {
 
   state.displayType = displayType;
   state.message = message;
+  state.likeDislikeHintMessage = likeDislikeHintMessage;
+  state.likeDislikeHintEnabled = likeDislikeHintEnabled;
   state.templateButtonText = buttonText;
   state.templateLanguage = language;
   state.surveyRuleOperator = surveyRules.operator || 'contains';
@@ -426,6 +432,8 @@ const performSave = async () => {
     const csatConfig = {
       display_type: state.displayType,
       message: state.message,
+      like_dislike_hint_message: state.likeDislikeHintMessage,
+      like_dislike_hint_enabled: state.likeDislikeHintEnabled,
       button_text: state.templateButtonText,
       language: state.templateLanguage,
       survey_rules: {
@@ -518,6 +526,29 @@ const handleConfirmTemplateUpdate = async () => {
               @update="updateDisplayType"
             />
           </WithLabel>
+
+          <!-- Like/dislike hint toggle + message — only for non-WhatsApp, only when like_dislike selected -->
+          <template
+            v-if="!isAnyWhatsAppChannel && state.displayType === 'like_dislike'"
+          >
+            <SettingsToggleSection
+              v-model="state.likeDislikeHintEnabled"
+              :header="$t('INBOX_MGMT.CSAT.LIKE_DISLIKE_HINT.TOGGLE_LABEL')"
+              :description="
+                $t('INBOX_MGMT.CSAT.LIKE_DISLIKE_HINT.TOGGLE_DESCRIPTION')
+              "
+            >
+              <template v-if="state.likeDislikeHintEnabled" #editor>
+                <Input
+                  v-model="state.likeDislikeHintMessage"
+                  :placeholder="
+                    $t('INBOX_MGMT.CSAT.LIKE_DISLIKE_HINT.PLACEHOLDER')
+                  "
+                  class="w-full"
+                />
+              </template>
+            </SettingsToggleSection>
+          </template>
 
           <template v-if="isAnyWhatsAppChannel">
             <div
