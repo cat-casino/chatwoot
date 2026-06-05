@@ -465,7 +465,7 @@ end
   end
 
   def cascade_close_proxy_chain
-    return unless resolved? || abandoned?
+    return unless resolved?
     Widget::ConversationCloseProxyService.new(self).call
   end
 

@@ -86,7 +86,7 @@ class Widget::ConversationProxyService
       current = Conversation.find_by(id: next_id)
     end
   
-    return nil if current.blank? || current.resolved? || current.abandoned?
+    return nil if current.blank? || current.resolved?
   
     current
   end

@@ -13,7 +13,7 @@ class Widget::ConversationCloseProxyService
 
   def should_cascade_close?
     return false if @conversation.proxied?
-    return false unless @conversation.resolved? || @conversation.abandoned?
+    return false unless @conversation.resolved?
 
     root_widget_id = @conversation.additional_attributes&.dig('source_widget_id')
     return false if root_widget_id.blank?
