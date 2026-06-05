@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_05_091203) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -508,8 +508,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.boolean "smtp_enable_ssl_tls", default: false
     t.jsonb "provider_config", default: {}
     t.string "provider"
-    t.string "imap_authentication", default: "plain"
     t.boolean "verified_for_sending", default: false, null: false
+    t.string "imap_authentication", default: "plain"
     t.index ["email"], name: "index_channel_email_on_email", unique: true
     t.index ["forward_to_email"], name: "index_channel_email_on_forward_to_email", unique: true
   end
@@ -648,7 +648,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.bigint "account_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "contacts_count"
+    t.integer "contacts_count", default: 0, null: false
     t.jsonb "additional_attributes", default: {}
     t.jsonb "custom_attributes", default: {}
     t.datetime "last_activity_at", precision: nil
@@ -733,9 +733,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.datetime "updated_at", null: false
     t.index ["account_id", "status", "position"], name: "idx_on_account_id_status_position_c5e04b77ac"
     t.index ["account_id", "status", "queued_at"], name: "idx_on_account_id_status_queued_at_960ec2cf36"
-    t.index ["account_id"], name: "index_conversation_queues_on_account_id"
     t.index ["conversation_id"], name: "index_conversation_queues_on_conversation_id", unique: true
-    t.index ["inbox_id"], name: "index_conversation_queues_on_inbox_id"
   end
 
   create_table "conversations", id: :serial, force: :cascade do |t|
@@ -964,6 +962,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.string "business_name"
     t.jsonb "csat_config", default: {}, null: false
     t.bigint "priority_group_id"
+    t.string "public_name"
     t.index ["account_id"], name: "index_inboxes_on_account_id"
     t.index ["channel_id", "channel_type"], name: "index_inboxes_on_channel_id_and_channel_type"
     t.index ["portal_id"], name: "index_inboxes_on_portal_id"
@@ -1196,7 +1195,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "name"], name: "index_priority_groups_on_account_id_and_name", unique: true
-    t.index ["account_id"], name: "index_priority_groups_on_account_id"
   end
 
   create_table "queue_statistics", force: :cascade do |t|
@@ -1210,7 +1208,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "date"], name: "index_queue_statistics_on_account_id_and_date", unique: true
-    t.index ["account_id"], name: "index_queue_statistics_on_account_id"
   end
 
   create_table "related_categories", force: :cascade do |t|
