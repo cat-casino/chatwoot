@@ -156,6 +156,7 @@ class Conversation < ApplicationRecord
 
   after_update :remove_from_queue_if_status_changed
   after_update :create_participant_for_new_agent
+  after_update_commit :cascade_close_proxy_chain, if: :saved_change_to_status?
   after_update_commit :execute_after_update_commit_callbacks
   after_update_commit :process_queue_on_assignment_change
   after_create_commit :notify_conversation_creation
@@ -461,6 +462,11 @@ end
 
     create_label_added(user_name, current_labels - previous_labels)
     create_label_removed(user_name, previous_labels - current_labels)
+  end
+
+  def cascade_close_proxy_chain
+    return unless resolved? || abandoned?
+    Widget::ConversationCloseProxyService.new(self).call
   end
 
   def validate_referer_url
