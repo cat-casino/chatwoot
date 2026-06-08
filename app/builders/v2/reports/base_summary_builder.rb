@@ -214,7 +214,9 @@ class V2::Reports::BaseSummaryBuilder
       range: range,
       group_by: 'day',
       timezone_offset: params[:timezone_offset],
-      business_hours: params[:business_hours]
+      business_hours: params[:business_hours],
+      inbox_ids: params[:inbox_ids],
+      user_ids: params[:user_ids] 
     )
   end
 
