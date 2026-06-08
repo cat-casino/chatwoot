@@ -64,12 +64,18 @@ watch(
 
 const visibleConversations = computed(() => {
   if (!isOpenFilter.value) return props.conversationList;
-  return props.conversationList.filter(c => {
+
+  const filtered = props.conversationList.filter(c => {
     if (c.status === 'resolved') {
-      if (initialResolvedIds?.has(c.id)) return false;
-      return !dismissedIds.value.has(c.id);
+      return c.resolved_by_contact === true && !dismissedIds.value.has(c.id);
     }
     return true;
+  });
+
+  return filtered.sort((a, b) => {
+    const aResolved = a.status === 'resolved' ? 1 : 0;
+    const bResolved = b.status === 'resolved' ? 1 : 0;
+    return aResolved - bResolved;
   });
 });
 

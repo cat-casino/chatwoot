@@ -14,6 +14,7 @@
 #  last_activity_at       :datetime         not null
 #  priority               :integer
 #  resolved_at            :datetime
+#  resolved_by_contact    :boolean          default(FALSE)
 #  snoozed_until          :datetime
 #  status                 :integer          default("open"), not null
 #  uuid                   :uuid             not null
@@ -400,7 +401,7 @@ end
 
   def list_of_keys
     %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
-       first_reply_created_at priority]
+       first_reply_created_at priority resolved_by_contact]
   end
 
   def allowed_keys?
