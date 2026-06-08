@@ -10,7 +10,6 @@
 #
 # Indexes
 #
-#  index_priority_groups_on_account_id           (account_id)
 #  index_priority_groups_on_account_id_and_name  (account_id,name) UNIQUE
 #
 # Foreign Keys
