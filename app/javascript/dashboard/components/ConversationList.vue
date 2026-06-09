@@ -108,17 +108,23 @@ defineExpose({ conversationListRef });
       :data="visibleConversations"
       class="[&>div:has(+_div_.active)>*]:!border-n-surface-1 [&>div:has(+_div_.selected)>*]:!border-n-surface-1"
     >
-      <ConversationItem
-        :source="item"
-        :label="label"
-        :team-id="teamId"
-        :folders-id="foldersId"
-        :conversation-type="conversationType"
-        :show-assignee="showAssignee"
-        :show-expanded="showExpandedCards"
-        :is-open-filter="isOpenFilter"
-        @hide-conversation="onHideConversation"
-      />
+      <div
+        :class="{
+          'resolved-in-open': item.status === 'resolved' && isOpenFilter,
+        }"
+      >
+        <ConversationItem
+          :source="item"
+          :label="label"
+          :team-id="teamId"
+          :folders-id="foldersId"
+          :conversation-type="conversationType"
+          :show-assignee="showAssignee"
+          :show-expanded="showExpandedCards"
+          :is-open-filter="isOpenFilter"
+          @hide-conversation="onHideConversation"
+        />
+      </div>
     </Virtualizer>
     <div v-if="isLoading" class="flex justify-center my-4">
       <Spinner class="text-n-brand" />
@@ -133,3 +139,13 @@ defineExpose({ conversationListRef });
     />
   </div>
 </template>
+
+<style scoped>
+.resolved-in-open :deep(*) {
+  color: #b3b3b3;
+}
+
+.dark .resolved-in-open :deep(*) {
+  color: #e6e6e6;
+}
+</style>
