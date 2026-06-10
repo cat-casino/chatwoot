@@ -234,7 +234,7 @@ watch(
         />
         <button
           v-if="isResolvedInOpenList"
-          class="mt-1 flex items-center justify-center w-5 h-5 rounded-full bg-n-slate-2 hover:bg-n-slate-4 border border-n-slate-4 text-n-slate-9 hover:text-n-slate-12 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-n-brand"
+          class="mt-1 flex items-center justify-center w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
           :title="$t('CHAT_LIST.HIDE_CHAT')"
           :aria-label="$t('CHAT_LIST.HIDE_CHAT')"
           @click.stop="onHideConversation"

@@ -110,7 +110,8 @@ defineExpose({ conversationListRef });
     >
       <div
         :class="{
-          'resolved-in-open': item.status === 'resolved' && isOpenFilter,
+          'resolved-in-open bg-n-slate-3 dark:bg-n-slate-3':
+            item.status === 'resolved' && isOpenFilter,
         }"
       >
         <ConversationItem
@@ -142,10 +143,10 @@ defineExpose({ conversationListRef });
 
 <style scoped>
 .resolved-in-open :deep(*) {
-  color: #b3b3b3;
+  color: #343434;
 }
 
 .dark .resolved-in-open :deep(*) {
-  color: #e6e6e6;
+  color: #e9e9e9;
 }
 </style>
