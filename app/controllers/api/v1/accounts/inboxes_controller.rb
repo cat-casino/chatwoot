@@ -145,11 +145,13 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def format_csat_config(config)
     formatted = {
-      'display_type'               => config['display_type'] || 'emoji',
-      'message'                    => config['message'] || '',
-      'like_dislike_hint_message'  => config['like_dislike_hint_message'] || '',
-      'like_dislike_hint_enabled'  => config.key?('like_dislike_hint_enabled') ? config['like_dislike_hint_enabled'] : true,
-      :survey_rules => {
+      'display_type'              => config['display_type'] || 'emoji',
+      'message'                   => config['message'] || '',
+      'message_enabled'           => config.key?('message_enabled') ? config['message_enabled'] : true,
+      'csat_on_resolve_enabled'  => config.key?('csat_on_resolve_enabled') ? config['csat_on_resolve_enabled'] : true,
+      'like_dislike_hint_message' => config['like_dislike_hint_message'] || '',
+      'like_dislike_hint_enabled' => config.key?('like_dislike_hint_enabled') ? config['like_dislike_hint_enabled'] : true,
+      survey_rules: {
         'operator' => config.dig('survey_rules', 'operator') || 'contains',
         'values'   => config.dig('survey_rules', 'values') || []
       },
@@ -168,7 +170,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     [:name, :public_name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
      :lock_to_single_conversation, :portal_id, :sender_name_type, :priority_group_id, :business_name,
-     { csat_config: [:display_type, :message, :button_text, :language, :like_dislike_hint_message, :like_dislike_hint_enabled,
+     { csat_config: [:display_type, :message, :message_enabled, :csat_on_resolve_enabled, :button_text, :language, :like_dislike_hint_message, :like_dislike_hint_enabled,
                      { survey_rules: [:operator, { values: [] }],
                        template: [:name, :template_id, :friendly_name, :content_sid, :approval_sid, :created_at, :language, :status] }] }]
   end
