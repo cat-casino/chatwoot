@@ -7,9 +7,6 @@ class Conversations::ResolutionJob < ApplicationJob
     resolvable_conversations.each do |conversation|
       resolve_conversation(conversation, account)
     end
-
-    resolvable_proxied_conversations = proxied_conversation_scope(account).limit(Limits::BULK_ACTIONS_LIMIT)
-    resolvable_proxied_conversations.each(&:resolved!)
   end
 
   private
@@ -63,12 +60,6 @@ class Conversations::ResolutionJob < ApplicationJob
                  end
 
     # Exclude orphan conversations where contact was deleted but conversation cleanup is pending
-    base_scope.where.not(contact_id: nil)
-  end
-
-  def proxied_conversation_scope(account)
-    account.conversations
-           .resolvable_proxied(account.auto_resolve_after)
-           .where.not(contact_id: nil)
+    base_scope.where.not(contact_id: nil).where.not(status: :proxied)
   end
 end
