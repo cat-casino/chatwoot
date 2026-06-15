@@ -13,6 +13,7 @@
 #  identifier             :string
 #  last_activity_at       :datetime         not null
 #  priority               :integer
+#  proxied_at             :datetime
 #  resolved_at            :datetime
 #  resolved_by_contact    :boolean          default(FALSE)
 #  snoozed_until          :datetime
@@ -46,6 +47,7 @@
 #  index_conversations_on_identifier_and_account_id   (identifier,account_id)
 #  index_conversations_on_inbox_id                    (inbox_id)
 #  index_conversations_on_priority                    (priority)
+#  index_conversations_on_proxied_at                  (proxied_at)
 #  index_conversations_on_resolved_at                 (resolved_at)
 #  index_conversations_on_status_and_account_id       (status,account_id)
 #  index_conversations_on_status_and_priority         (status,priority)

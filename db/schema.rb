@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_08_124930) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_15_115057) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -49,11 +49,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_08_124930) do
     t.datetime "updated_at", precision: nil, null: false
     t.datetime "active_at", precision: nil
     t.integer "availability", default: 0, null: false
-    t.boolean "auto_offline", default: true, null: false
     t.bigint "custom_role_id"
     t.bigint "agent_capacity_policy_id"
     t.integer "active_chat_limit"
     t.boolean "active_chat_limit_enabled", default: false, null: false
+    t.boolean "auto_offline", default: false, null: false
     t.index ["account_id", "user_id"], name: "uniq_user_id_per_account_id", unique: true
     t.index ["account_id"], name: "index_account_users_on_account_id"
     t.index ["agent_capacity_policy_id"], name: "index_account_users_on_agent_capacity_policy_id"
@@ -765,6 +765,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_08_124930) do
     t.bigint "assignee_agent_bot_id"
     t.datetime "resolved_at"
     t.boolean "resolved_by_contact", default: false
+    t.datetime "proxied_at"
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
@@ -777,6 +778,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_08_124930) do
     t.index ["identifier", "account_id"], name: "index_conversations_on_identifier_and_account_id"
     t.index ["inbox_id"], name: "index_conversations_on_inbox_id"
     t.index ["priority"], name: "index_conversations_on_priority"
+    t.index ["proxied_at"], name: "index_conversations_on_proxied_at"
     t.index ["resolved_at"], name: "index_conversations_on_resolved_at"
     t.index ["status", "account_id"], name: "index_conversations_on_status_and_account_id"
     t.index ["status", "priority"], name: "index_conversations_on_status_and_priority"
