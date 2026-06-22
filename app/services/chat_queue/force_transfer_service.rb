@@ -29,18 +29,29 @@ class ChatQueue::ForceTransferService
     available_agents = fetch_available_agents
     return nil if available_agents.empty?
 
+    limits_service = ChatQueue::Agents::LimitsService.new(account: conversation.account)
+
     agents_with_load = available_agents.map do |agent|
       {
         agent: agent,
         active_count: active_conversations_count(agent.id),
+        limit: limits_service.limit_for(agent.id),
         last_assigned_at: last_assigned_at(agent.id)
       }
     end
 
-    min_load = agents_with_load.pluck(:active_count).min
+    under_limit = agents_with_load.reject do |h|
+      h[:limit].present? && h[:active_count] >= h[:limit]
+    end
 
-    least_loaded = agents_with_load.select { |h| h[:active_count] == min_load }
+    candidates = if under_limit.any?
+                   under_limit
+                 else
+                   agents_with_load
+                 end
 
+    min_load = candidates.pluck(:active_count).min
+    least_loaded = candidates.select { |h| h[:active_count] == min_load }
     least_loaded.min_by { |h| h[:last_assigned_at] || Time.zone.at(0) }[:agent]
   end
 
@@ -53,8 +64,10 @@ class ChatQueue::ForceTransferService
 
     return [] if online_agent_ids.empty?
 
+    availability = ChatQueue::Agents::AvailabilityService.new(account: conversation.account)
+
     allowed_agents = User.where(id: online_agent_ids).select do |agent|
-      agent_has_access?(agent)
+      agent_has_access?(agent) && availability.available?(agent)
     end
 
     allowed_agents.reject { |agent| agent.id == conversation.assignee_id }
