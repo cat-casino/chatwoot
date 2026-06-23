@@ -17,6 +17,7 @@ import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
 import NextSwitch from 'next/switch/Switch.vue';
+import AutoResolve from './components/AutoResolve.vue';
 
 export default {
   components: {
@@ -30,6 +31,7 @@ export default {
     WithLabel,
     NextInput,
     NextSwitch,
+    AutoResolve,
   },
   setup() {
     const { updateUISettings, uiSettings } = useUISettings();
@@ -324,6 +326,8 @@ export default {
       </SectionLayout>
 
       <woot-loading-state v-if="uiFlags.isFetchingItem" />
+
+      <AutoResolve />
     </div>
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <AccountId />
