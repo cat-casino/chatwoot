@@ -18,7 +18,7 @@ class V2::Reports::QueuedCustomersBuilder
   private
 
   def scoped_conversations
-    scope = Conversation.where(account_id: account.id)
+    scope = Conversation.where(account_id: account.id, proxied_at: nil)
     scope = scope.where(team_id: params[:team_ids]) if params[:team_ids].present?
     scope = scope.where(inbox_id: params[:inbox_ids]) if params[:inbox_ids].present?
     scope

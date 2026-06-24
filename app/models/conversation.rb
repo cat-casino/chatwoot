@@ -86,6 +86,7 @@ class Conversation < ApplicationRecord
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
   scope :proxied, -> { where(status: :proxied) }
+  scope :non_proxied, -> { where(proxied_at: nil) }
   scope :resolvable_proxied, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
 
@@ -156,6 +157,7 @@ class Conversation < ApplicationRecord
   before_create :ensure_waiting_since
   before_update :close_previous_agent_on_reassign
   before_update :close_agents_on_resolve
+  before_update :set_proxied_at
 
   after_update :remove_from_queue_if_status_changed
   after_update :create_participant_for_new_agent
@@ -285,6 +287,10 @@ class Conversation < ApplicationRecord
   end
 
   private
+
+  def set_proxied_at
+    self.proxied_at = Time.current if will_save_change_to_status? && status == 'proxied'
+  end
 
   def close_previous_agent_on_reassign
     return unless will_save_change_to_assignee_id?

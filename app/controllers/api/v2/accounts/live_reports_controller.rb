@@ -66,7 +66,7 @@ class Api::V2::Accounts::LiveReportsController < Api::V1::Accounts::BaseControll
   end
 
   def load_conversations
-    scope = Current.account.conversations
+    scope = Current.account.conversations.where(proxied_at: nil)
     scope = apply_team_filter(scope)
     scope = apply_user_filter(scope)
     scope = apply_inbox_filter(scope)

@@ -56,7 +56,14 @@ class V2::Reports::BaseSummaryBuilder
   end
 
   def reporting_events
-    @reporting_events ||= account.reporting_events.where(created_at: range)
+    # JOIN + proxied_at filter applied once here; all downstream callers benefit automatically.
+    # CategorySummaryBuilder overrides exclude_proxy_chats? to return false.
+    @reporting_events ||= begin
+      scope = account.reporting_events.where(created_at: range)
+      return scope unless exclude_proxy_chats?
+
+      scope.joins(:conversation).where(conversations: { proxied_at: nil })
+    end
   end
 
   def filtered_reporting_events
@@ -64,8 +71,18 @@ class V2::Reports::BaseSummaryBuilder
   end
 
   def filtered_conversations
-    apply_conversation_filters(account.conversations.where(created_at: range))
+    scope = account.conversations.where(created_at: range)
+    scope = scope.where(proxied_at: nil) if exclude_proxy_chats?
+    apply_conversation_filters(scope)
   end
+
+  # ─── proxy filter hook ────────────────────────────────────────────────────
+  # Returns true by default — proxy chats are excluded everywhere.
+  # Override in CategorySummaryBuilder (or any label-based builder) to false.
+  def exclude_proxy_chats?
+    true
+  end
+  # ─────────────────────────────────────────────────────────────────────────
 
   def apply_filters(scope)
     scope = apply_user_filter(scope)
@@ -158,6 +175,9 @@ class V2::Reports::BaseSummaryBuilder
 
   def filtered_csat_responses
     scope = account.csat_survey_responses.where(created_at: range).where.not(rating: nil)
+    # Exclude proxy chats via the conversation association.
+    # CsatSurveyResponse belongs_to :conversation (has_one on the Conversation side).
+    scope = scope.joins(:conversation).where(conversations: { proxied_at: nil }) if exclude_proxy_chats?
     apply_csat_filters(scope)
   end
 
@@ -203,7 +223,7 @@ class V2::Reports::BaseSummaryBuilder
   def use_business_hours?
     ActiveModel::Type::Boolean.new.cast(params[:business_hours])
   end
-  
+
   def data_source
     @data_source ||= Reports::DataSource.for(
       account: account,
@@ -216,7 +236,7 @@ class V2::Reports::BaseSummaryBuilder
       timezone_offset: params[:timezone_offset],
       business_hours: params[:business_hours],
       inbox_ids: params[:inbox_ids],
-      user_ids: params[:user_ids] 
+      user_ids: params[:user_ids]
     )
   end
 
