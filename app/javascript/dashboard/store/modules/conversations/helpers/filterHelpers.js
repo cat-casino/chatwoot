@@ -195,7 +195,9 @@ const matchesCondition = (conversationValue, filter) => {
   const { filter_operator: filterOperator, values } = filter;
 
   const isNullish =
-    conversationValue === null || conversationValue === undefined;
+    conversationValue === null ||
+    conversationValue === undefined ||
+    (Array.isArray(conversationValue) && conversationValue.length === 0);
 
   const filterValue = Array.isArray(values)
     ? values.map(resolveValue)
