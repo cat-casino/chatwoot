@@ -15,19 +15,28 @@ class AutoAssignment::AgentAssignmentService
 
   def find_assignee
     ids = allowed_online_agent_ids
+    Rails.logger.debug { "AutoAssignment [conv=#{conversation.id}] online+allowed ids: #{ids}" }
+
     return if ids.blank?
 
     counts = active_chat_counts_for(ids)
+    Rails.logger.debug { "AutoAssignment [conv=#{conversation.id}] load counts: #{counts}" }
+
     available_ids = filter_agents_below_limit(ids, counts)
+    Rails.logger.debug { "AutoAssignment [conv=#{conversation.id}] available after limit filter: #{available_ids}" }
+
     return if available_ids.blank?
 
     min_count = counts.slice(*available_ids).values.min
     least_busy_agents = counts.select { |id, count| available_ids.include?(id) && count == min_count }.keys
 
+    Rails.logger.debug { "AutoAssignment [conv=#{conversation.id}] least busy: #{least_busy_agents} (count=#{min_count})" }
+  
     return User.find_by(id: least_busy_agents.first) if least_busy_agents.size == 1
 
     last_closed_times = last_closed_chat_times_for(least_busy_agents)
     selected_id = pick_least_recent_assigned(least_busy_agents, counts, last_closed_times)
+    Rails.logger.debug { "AutoAssignment [conv=#{conversation.id}] selected by last_closed: #{selected_id}" }
 
     User.find_by(id: selected_id)
   end
