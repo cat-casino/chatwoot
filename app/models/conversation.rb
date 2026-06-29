@@ -346,6 +346,7 @@ class Conversation < ApplicationRecord
     return unless account.queue_enabled?
     return unless saved_change_to_assignee_id? || saved_change_to_status?
 
+    open! if saved_change_to_assignee_id? && assignee_id.present? && queued?
     Queue::ProcessQueueJob.perform_later(account.id, inbox_id) if resolved? || assignee_id.blank?
   end
 
