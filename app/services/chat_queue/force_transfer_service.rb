@@ -81,8 +81,7 @@ class ChatQueue::ForceTransferService
 
   def active_conversations_count(agent_id)
     Conversation
-      .where(account_id: conversation.account.id, assignee_id: agent_id)
-      .where.not(status: :resolved)
+      .where(account_id: conversation.account.id, assignee_id: agent_id, status: :open)
       .count
   end
 

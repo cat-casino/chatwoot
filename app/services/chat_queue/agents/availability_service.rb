@@ -31,8 +31,7 @@ class ChatQueue::Agents::AvailabilityService
 
   def active_conversations_count(agent)
     Conversation
-      .where(account_id: account.id, assignee_id: agent.id)
-      .where.not(status: :resolved)
+      .where(account_id: account.id, assignee_id: agent.id, status: :open)
       .count
   end
 
