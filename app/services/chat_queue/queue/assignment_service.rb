@@ -80,8 +80,7 @@ class ChatQueue::Queue::AssignmentService
     return true if limit.nil?
 
     active_chats = Conversation
-                   .where(account_id: account.id, assignee_id: agent.id)
-                   .where.not(status: :resolved)
+                   .where(account_id: account.id, assignee_id: agent.id, status: :open)
                    .lock('FOR UPDATE')
                    .pluck(:id)
 
