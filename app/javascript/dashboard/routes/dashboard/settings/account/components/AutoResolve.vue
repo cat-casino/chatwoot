@@ -69,12 +69,12 @@ watch(
       auto_resolve_pending_message,
     } = currentAccount.value?.settings || {};
 
-    duration.value = auto_resolve_after;
+    duration.value = auto_resolve_after ?? 0;
     ignoreWaiting.value = auto_resolve_ignore_waiting;
 
-    labelToApply.value = labelOptions.value.find(
-      option => option.name === auto_resolve_label
-    );
+    labelToApply.value =
+      labelOptions.value.find(option => option.name === auto_resolve_label) ??
+      {};
 
     if (!isInitialized.value) {
       splitReasons.value = auto_resolve_split_reasons || false;
@@ -101,7 +101,7 @@ watch(
       isEnabled.value = true;
     }
 
-    pendingDuration.value = auto_resolve_pending_after;
+    pendingDuration.value = auto_resolve_pending_after ?? 0;
 
     if (!isPendingInitialized.value) {
       pendingMessage.value = auto_resolve_pending_message || '';
