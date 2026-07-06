@@ -4,9 +4,18 @@ class Widget::ConversationCloseProxyService
   end
 
   def call
+    return if Thread.current[:closing_proxy_chain]
     return unless should_cascade_close?
 
+    Thread.current[:closing_proxy_chain] = true
     close_all_linked_proxy_conversations
+  rescue StandardError => e
+    Rails.logger.error(
+      "[CloseProxyService] failed for conversation ##{@conversation.id}: #{e.class} - #{e.message}\n" \
+      "#{e.backtrace.first(10).join("\n")}"
+    )
+  ensure
+    Thread.current[:closing_proxy_chain] = nil
   end
 
   private
@@ -43,12 +52,14 @@ class Widget::ConversationCloseProxyService
 
     while queue.present?
       conv = queue.shift
-      next if visited.include?(conv.id)
+      next if conv.blank? || visited.include?(conv.id)
+
       visited << conv.id
 
       if conv.open? || conv.pending? || conv.proxied?
+        previous_status = conv.status
         conv.update!(status: :resolved)
-        Rails.logger.info("[CloseProxyService] closed conversation ##{conv.id} (was #{conv.status_before_last_save})")
+        Rails.logger.info("[CloseProxyService] closed conversation ##{conv.id} (was #{previous_status})")
       end
 
       linked_id = conv.additional_attributes&.dig('linked_conversation_id')
