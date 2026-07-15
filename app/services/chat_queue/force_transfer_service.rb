@@ -54,7 +54,7 @@ class ChatQueue::ForceTransferService
     return [] if online_agent_ids.empty?
 
     allowed_agents = User.where(id: online_agent_ids).select do |agent|
-      agent_has_access?(agent)
+      agent_has_access?(agent) && !agent_over_limit?(agent)
     end
 
     allowed_agents.reject { |agent| agent.id == conversation.assignee_id }
@@ -64,6 +64,22 @@ class ChatQueue::ForceTransferService
     inbox_ids = InboxMember.where(user_id: agent.id).pluck(:inbox_id)
 
     inbox_ids.include?(conversation.inbox_id)
+  end
+
+  def agent_over_limit?(agent)
+    account_user = account_user_for(agent)
+    return false unless account_user&.active_chat_limit_enabled?
+    return false if account_user.active_chat_limit.nil?
+
+    active_conversations_count(agent.id) >= account_user.active_chat_limit
+  end
+
+  def account_user_for(agent)
+    @account_users ||= {}
+    @account_users[agent.id] ||= AccountUser.find_by(
+      account_id: conversation.account_id,
+      user_id: agent.id
+    )
   end
 
   def active_conversations_count(agent_id)
