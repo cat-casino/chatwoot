@@ -12,21 +12,22 @@ class ChatQueue::Queue::EntryService
 
   def send_greeting_message(conversation)
     inbox = conversation.inbox
+
+    return if inbox.active_bot?
     return unless inbox.greeting_enabled? && inbox.greeting_message.present?
-  
+
     cid = conversation.id
-  
+
     already_sent = conversation.messages
                                .where(message_type: :outgoing)
-                               .where(content: inbox.greeting_message)
-                               .exists?
+                               .exists?(content: inbox.greeting_message)
     if already_sent
       Rails.logger.info("[QUEUE][add][conv=#{cid}] Greeting already sent, skipping")
       return
     end
-  
+
     Rails.logger.info("[QUEUE][add][conv=#{cid}] Sending greeting message")
-  
+
     conversation.messages.create!(
       account: account,
       inbox: inbox,
