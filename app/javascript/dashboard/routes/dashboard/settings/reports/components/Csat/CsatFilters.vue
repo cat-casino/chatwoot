@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
+import { useAccount } from 'dashboard/composables/useAccount';
+import { useMapGetter } from 'dashboard/composables/store';
 import {
   buildFilterList,
   buildRatingsList,
@@ -22,6 +24,16 @@ const emit = defineEmits(['filterChange']);
 
 const { t } = useI18n();
 const store = useStore();
+const { accountId } = useAccount();
+const currentUser = useMapGetter('getCurrentUser');
+
+const isRestrictedAgent = computed(() => {
+  const account = currentUser.value?.accounts?.find(
+    item => Number(item.id) === Number(accountId.value)
+  );
+
+  return account?.role === 'agent' && !account?.custom_role_id;
+});
 
 const showDropdownMenu = ref(false);
 const from = ref(0);
@@ -72,11 +84,15 @@ const getFilterOptions = type => {
 
 const filterListMenuItems = computed(() => {
   const filterTypes = [
-    {
-      id: '1',
-      name: t('CSAT_REPORTS.FILTERS.AGENTS.LABEL'),
-      type: 'agents',
-    },
+    ...(!isRestrictedAgent.value
+      ? [
+          {
+            id: '1',
+            name: t('CSAT_REPORTS.FILTERS.AGENTS.LABEL'),
+            type: 'agents',
+          },
+        ]
+      : []),
     {
       id: '2',
       name: t('CSAT_REPORTS.FILTERS.INBOXES.LABEL'),

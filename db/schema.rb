@@ -49,11 +49,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_065155) do
     t.datetime "updated_at", precision: nil, null: false
     t.datetime "active_at", precision: nil
     t.integer "availability", default: 0, null: false
+    t.boolean "auto_offline", default: false, null: false
     t.bigint "custom_role_id"
     t.bigint "agent_capacity_policy_id"
     t.integer "active_chat_limit"
     t.boolean "active_chat_limit_enabled", default: false, null: false
-    t.boolean "auto_offline", default: false, null: false
     t.index ["account_id", "user_id"], name: "uniq_user_id_per_account_id", unique: true
     t.index ["account_id"], name: "index_account_users_on_account_id"
     t.index ["agent_capacity_policy_id"], name: "index_account_users_on_agent_capacity_policy_id"

@@ -32,6 +32,11 @@ const meta = {
   permissions: ['administrator', 'report_manage'],
 };
 
+const agentAccessibleMeta = {
+  featureFlag: FEATURE_FLAGS.REPORTS,
+  permissions: ['administrator', 'agent', 'report_manage'],
+};
+
 const oldReportRoutes = [
   {
     path: 'all-metrics',
@@ -69,33 +74,25 @@ const revisedReportRoutes = [
   {
     path: 'agent_activity',
     name: 'agent_activity',
-    meta: {
-      permissions: ['administrator', 'report_manage'],
-    },
+    meta: agentAccessibleMeta,
     component: AgentActivityIndex,
   },
   {
     path: 'agents_overview',
     name: 'agent_reports_index',
-    meta: {
-      permissions: ['administrator', 'report_manage'],
-    },
+    meta: agentAccessibleMeta,
     component: AgentReportsIndex,
   },
   {
     path: 'agents',
     name: 'agent_reports_show_empty',
-    meta: {
-      permissions: ['administrator', 'report_manage'],
-    },
+    meta: agentAccessibleMeta,
     component: AgentReportsShow,
   },
   {
     path: 'agents/:id',
     name: 'agent_reports_show',
-    meta: {
-      permissions: ['administrator', 'report_manage'],
-    },
+    meta: agentAccessibleMeta,
     component: AgentReportsShow,
   },
 
@@ -134,17 +131,13 @@ const revisedReportRoutes = [
   {
     path: 'labels_overview',
     name: 'label_reports_index',
-    meta: {
-      permissions: ['administrator', 'report_manage'],
-    },
+    meta: agentAccessibleMeta,
     component: LabelReportsIndex,
   },
   {
     path: 'labels/:id',
     name: 'label_reports_show',
-    meta: {
-      permissions: ['administrator', 'report_manage'],
-    },
+    meta: agentAccessibleMeta,
     component: LabelReportsShow,
   },
 ];
@@ -164,7 +157,7 @@ export default {
         {
           path: 'overview',
           name: 'account_overview_reports',
-          meta,
+          meta: agentAccessibleMeta,
           component: LiveReports,
         },
         {
@@ -184,7 +177,7 @@ export default {
         {
           path: 'csat',
           name: 'csat_reports',
-          meta,
+          meta: agentAccessibleMeta,
           component: CsatResponses,
         },
         {

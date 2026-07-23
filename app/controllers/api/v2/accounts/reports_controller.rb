@@ -161,7 +161,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   end
 
   def check_authorization
-    authorize :report, :view?
+    authorize({ action: action_name, type: params[:type] }, :view?, policy_class: ReportPolicy)
   end
 
   def queued_customers_params
