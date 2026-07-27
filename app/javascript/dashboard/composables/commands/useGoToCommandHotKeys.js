@@ -39,7 +39,7 @@ const GO_TO_COMMANDS = [
     featureFlag: FEATURE_FLAGS.CRM,
     icon: ICON_CONTACT_DASHBOARD,
     path: accountId => `accounts/${accountId}/contacts`,
-    role: ['administrator', 'agent'],
+    role: ['administrator'],
   },
   {
     id: 'open_reports_overview',

@@ -48,6 +48,7 @@ class Account < ApplicationRecord
         'audio_transcriptions': { 'type': %w[boolean null] },
         'auto_resolve_label': { 'type': %w[string null] },
         'busy_to_offline_timeout': { 'type': %w[integer null], 'minimum': 1 },
+        'agent_history_days': { 'type': %w[integer null], 'minimum': 0, 'maximum': 365 },
         'conversation_required_attributes': {
           'type': %w[array null],
           'items': { 'type': 'string' }
@@ -108,6 +109,7 @@ class Account < ApplicationRecord
   store_accessor :settings, :audio_transcriptions, :auto_resolve_label
   store_accessor :settings, :captain_models, :captain_features
   store_accessor :settings, :busy_to_offline_timeout
+  store_accessor :settings, :agent_history_days
   store_accessor :settings, :reporting_timezone
   store_accessor :settings, :keep_pending_on_bot_failure
   store_accessor :settings, :captain_auto_resolve_mode

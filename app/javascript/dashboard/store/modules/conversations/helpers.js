@@ -81,12 +81,15 @@ export const applyRoleFilter = (
   permissions,
   currentUserId
 ) => {
-  // the role === "agent" check is typically not correct on it's own
-  // the backend handles this by checking the custom_role_id at the user model
-  // here however, the `getUserRole` returns "custom_role" if the id is present,
-  // so we can check the role === "agent" directly
-  if (['administrator', 'agent'].includes(role)) {
+  if (role === 'administrator') {
     return true;
+  }
+
+  if (role === 'agent') {
+    const conversationAssignee = conversation.meta?.assignee;
+    const isUnassigned = !conversationAssignee;
+    const isAssignedToUser = conversationAssignee?.id === currentUserId;
+    return isUnassigned || isAssignedToUser;
   }
 
   // Check for full conversation management permission

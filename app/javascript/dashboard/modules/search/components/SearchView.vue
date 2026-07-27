@@ -100,7 +100,7 @@ const TABS_CONFIG = {
     count: () => null, // No count for all tab
   },
   contacts: {
-    permissions: [...ROLES, CONTACT_PERMISSIONS],
+    permissions: ['administrator', CONTACT_PERMISSIONS],
     count: () => mappedContacts.value.length,
   },
   conversations: {
@@ -144,7 +144,7 @@ const tabs = computed(() => {
 const totalSearchResultsCount = computed(() => {
   const permissionCounts = [
     {
-      permissions: [...ROLES, CONTACT_PERMISSIONS],
+      permissions: ['administrator', CONTACT_PERMISSIONS],
       count: () => contacts.value.length,
     },
     {
@@ -390,7 +390,7 @@ onUnmounted(() => {
         <div class="w-full max-w-5xl mx-auto px-4 pb-6">
           <div v-if="showResultsSection">
             <Policy
-              :permissions="[...ROLES, CONTACT_PERMISSIONS]"
+              :permissions="['administrator', CONTACT_PERMISSIONS]"
               class="flex flex-col justify-center"
             >
               <SearchResultContactsList

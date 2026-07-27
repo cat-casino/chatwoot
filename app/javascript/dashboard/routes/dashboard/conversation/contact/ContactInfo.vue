@@ -1,4 +1,5 @@
 <script>
+import { computed } from 'vue';
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import {
@@ -7,6 +8,12 @@ import {
 } from 'shared/helpers/CustomErrors';
 import { dynamicTime } from 'shared/helpers/timeHelper';
 import { useAdmin } from 'dashboard/composables/useAdmin';
+import { useMapGetter } from 'dashboard/composables/store';
+import { CONTACT_PERMISSIONS } from 'dashboard/constants/permissions.js';
+import {
+  getUserPermissions,
+  hasPermissions,
+} from 'dashboard/helper/permissionsHelper';
 import ContactInfoRow from './ContactInfoRow.vue';
 import Avatar from 'next/avatar/Avatar.vue';
 import SocialIcons from './SocialIcons.vue';
@@ -44,8 +51,24 @@ export default {
   emits: ['panelClose'],
   setup() {
     const { isAdmin } = useAdmin();
+    const currentUser = useMapGetter('getCurrentUser');
+    const currentAccountId = useMapGetter('getCurrentAccountId');
+
+    const canViewContactProfile = computed(() => {
+      const permissions = getUserPermissions(
+        currentUser.value,
+        currentAccountId.value
+      );
+
+      return hasPermissions(
+        ['administrator', CONTACT_PERMISSIONS],
+        permissions
+      );
+    });
+
     return {
       isAdmin,
+      canViewContactProfile,
     };
   },
   data() {
@@ -254,6 +277,7 @@ export default {
               class="i-lucide-info text-sm text-n-slate-10"
             />
             <a
+              v-if="canViewContactProfile"
               :href="contactProfileLink"
               target="_blank"
               rel="noopener nofollow noreferrer"
