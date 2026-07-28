@@ -118,8 +118,6 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onAssigneeChanged = payload => {
-    if (!this.canAccessConversation(payload)) return;
-
     const { id } = payload;
     if (id) {
       this.app.$store.dispatch('updateConversation', payload);

@@ -136,6 +136,7 @@ class ActionCableListener < BaseListener
     tokens = conversation_listener_tokens(account, conversation)
 
     tokens << conversation.assignee.pubsub_token if conversation.assignee&.pubsub_token
+    tokens += previous_assignee_tokens(event)
 
     broadcast(account, tokens, ASSIGNEE_CHANGED, conversation.push_event_data)
   end
@@ -210,15 +211,25 @@ class ActionCableListener < BaseListener
   end
 
   def conversation_listener_tokens(account, conversation)
-    allowed_members = conversation.inbox.members.select do |member|
-      account_user = AccountUser.find_by(account_id: account.id, user_id: member.id)
+    members = conversation.inbox.members
+    account_users_by_user_id = AccountUser.where(account_id: account.id, user_id: members.map(&:id)).index_by(&:user_id)
+
+    allowed_members = members.select do |member|
+      account_user = account_users_by_user_id[member.id]
       next true if account_user&.administrator?
       next true unless Conversations::AgentAccessService.restricted_agent?(account_user)
 
-      Conversations::AgentAccessService.new(conversation: conversation, user: member, account: account).allowed?
+      Conversations::AgentAccessService.new(conversation: conversation, user: member, account: account, account_user: account_user).allowed?
     end
 
     user_tokens(account, allowed_members)
+  end
+
+  def previous_assignee_tokens(event)
+    previous_assignee_id = event.data.dig(:changed_attributes, 'assignee_id')&.first
+    return [] if previous_assignee_id.blank?
+
+    User.where(id: previous_assignee_id).pluck(:pubsub_token)
   end
 
   def user_tokens(account, agents)

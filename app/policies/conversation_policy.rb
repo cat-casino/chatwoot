@@ -53,7 +53,7 @@ class ConversationPolicy < ApplicationPolicy
   def agent_access_allowed?
     return true unless Conversations::AgentAccessService.restricted_agent?(account_user)
 
-    Conversations::AgentAccessService.new(conversation: record, user: user, account: account).allowed?
+    Conversations::AgentAccessService.new(conversation: record, user: user, account: account, account_user: account_user).allowed?
   end
 end
 

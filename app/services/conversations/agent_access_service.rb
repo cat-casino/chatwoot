@@ -1,7 +1,7 @@
 class Conversations::AgentAccessService
   DEFAULT_HISTORY_DAYS = 30
 
-  pattr_initialize [:conversation!, :user!, :account!]
+  pattr_initialize [:conversation!, :user!, :account!, :account_user]
 
   def self.apply_scope(conversations, user, account)
     account_user = find_account_user(user, account)
