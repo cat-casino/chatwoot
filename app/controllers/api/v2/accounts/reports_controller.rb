@@ -93,6 +93,13 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     respond_with_report_download('conversation_traffic_reports', 'api/v2/accounts/reports/conversation_traffic')
   end
 
+  def drilldown
+    return head :unauthorized unless Current.account_user.administrator?
+    return head :unprocessable_entity unless valid_drilldown_params?
+
+    render json: V2::Reports::DrilldownBuilder.new(Current.account, drilldown_params).build
+  end
+
   def conversations
     return head :unprocessable_entity if params[:type].blank?
 
@@ -165,6 +172,31 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   end
 
   def queued_customers_params
+    {
+      since: params[:since],
+      until: params[:until],
+      team_ids: params[:team_ids]&.reject(&:blank?),
+      inbox_ids: params[:inbox_ids]&.reject(&:blank?)
+    }.compact
+  end
+
+  def drilldown_params
+    permitted_params = params.permit(
+      :metric, :id, :since, :until, :group_by, :timezone_offset, :bucket_timestamp, :page, :per_page
+    ).to_h.symbolize_keys
+    permitted_params.merge(
+      type: (params[:type].presence || 'account').to_sym,
+      business_hours: ActiveModel::Type::Boolean.new.cast(params[:business_hours])
+    )
+  end
+
+  def valid_drilldown_params?
+    %i[metric bucket_timestamp since until].all? { |param| params[param].present? } &&
+      Reports::ReportMetricRegistry.supported?(params[:metric]) &&
+      V2::Reports::DrilldownBuilder.supported_dimension_type?(params[:type]) && Reports::DrilldownTimestampValidator.valid?(params)
+  end
+
+  def conversation_params
     {
       since: params[:since],
       until: params[:until],

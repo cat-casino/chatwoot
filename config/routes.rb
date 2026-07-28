@@ -29,6 +29,7 @@ Rails.application.routes.draw do
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_instagram_inbox_settings'
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_tiktok_inbox_settings'
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_email_inbox_settings'
+    get '/app/accounts/:account_id/onboarding/inbox-setup', to: 'dashboard#index', as: 'app_onboarding_inbox_setup'
 
     resource :widget, only: [:show]
     namespace :survey do
@@ -54,6 +55,9 @@ Rails.application.routes.draw do
             resource :contact_merge, only: [:create]
           end
           resource :bulk_actions, only: [:create]
+          resource :onboarding, only: [:update] do
+            get :help_center_generation
+          end
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
             member do
@@ -66,6 +70,10 @@ Rails.application.routes.draw do
             resources :assistants do
               member do
                 post :playground
+                get :metrics
+                get :faq_stats
+                get :summary
+                get :drilldown
               end
               collection do
                 get :tools
@@ -73,7 +81,13 @@ Rails.application.routes.draw do
               resources :inboxes, only: [:index, :create, :destroy], param: :inbox_id
               resources :scenarios
             end
+            resources :agent_sessions, only: [:show]
             resources :assistant_responses
+            resources :faq_suggestions, only: [:index, :show, :update] do
+              post :approve, on: :member
+              post :dismiss, on: :member
+            end
+            resources :message_reports, only: [:create]
             resources :bulk_actions, only: [:create]
             resources :copilot_threads, only: [:index, :create] do
               resources :copilot_messages, only: [:index, :create]
@@ -164,6 +178,7 @@ Rails.application.routes.draw do
               post :update_last_seen
               post :unread
               post :custom_attributes
+              post :destroy_custom_attributes
               get :attachments
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
@@ -220,6 +235,18 @@ Rails.application.routes.draw do
               post :call, on: :member, to: 'calls#create' if ChatwootApp.enterprise?
             end
           end
+          resources :data_imports, only: [:index, :show, :create] do
+            collection do
+              post :validate_source
+            end
+            member do
+              post :start
+              post :retry, action: :retry_import
+              post :abandon
+              get :error_logs
+              get :skip_logs
+            end
+          end
           resources :csat_survey_responses, only: [:index] do
             collection do
               get :metrics
@@ -238,6 +265,7 @@ Rails.application.routes.draw do
           resources :reporting_events, only: [:index] if ChatwootApp.enterprise?
 
           if ChatwootApp.enterprise?
+            resources :calls, only: [:index]
             resources :whatsapp_calls, only: [:show] do
               member do
                 post :accept
@@ -253,6 +281,7 @@ Rails.application.routes.draw do
 
           resources :custom_attribute_definitions, only: [:index, :show, :create, :update, :destroy]
           resources :custom_filters, only: [:index, :show, :create, :update, :destroy]
+          resource :branded_email_layout, only: [:show, :update]
           resources :inboxes, only: [:index, :show, :create, :update, :destroy] do
             get :index_all, on: :collection
             get :assignable_agents, on: :member
@@ -270,6 +299,7 @@ Rails.application.routes.draw do
               end
               post :enable_whatsapp_calling, on: :member
               post :disable_whatsapp_calling, on: :member
+              post :set_inbound_calls, on: :member
             end
 
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates' do
@@ -443,6 +473,7 @@ Rails.application.routes.draw do
             post :verify
             post :backup_codes
           end
+          resources :sessions, only: [:index, :destroy]
         end
       end
 
@@ -509,6 +540,7 @@ Rails.application.routes.draw do
               get :conversations
               get :conversations_summary
               get :conversation_traffic
+              get :drilldown
               get :bot_metrics
               get :queued_customers
               get :overview_summary
@@ -539,9 +571,11 @@ Rails.application.routes.draw do
             member do
               post :checkout
               post :subscription
+              post :select_billing_currency
               get :limits
               post :toggle_deletion
               post :topup_checkout
+              get :topup_options
             end
           end
         end
@@ -607,6 +641,7 @@ Rails.application.routes.draw do
   get 'hc/:slug', to: 'public/api/v1/portals#show'
   get 'hc/:slug/sitemap.xml', to: 'public/api/v1/portals#sitemap'
   get 'hc/:slug/:locale', to: 'public/api/v1/portals#show', as: :public_portal_locale
+  get 'hc/:slug/:locale/search', to: 'public/api/v1/portals/search#index', as: :portal_search
   get 'hc/:slug/:locale/articles', to: 'public/api/v1/portals/articles#index'
   get 'hc/:slug/:locale/categories', to: 'public/api/v1/portals/categories#index'
   get 'hc/:slug/:locale/categories/:category_slug', to: 'public/api/v1/portals/categories#show', as: :public_portal_category

@@ -20,7 +20,7 @@ class Api::V1::Widget::ConversationsController < Api::V1::Widget::BaseController
     @contact = ContactIdentifyAction.new(
       contact: @contact,
       params: { identifier: @contact.identifier,
-                email: contact_email, phone_number: contact_phone_number, name: contact_name },
+                email: contact_email, phone_number: contact_phone_number, name: contact_name, custom_attributes: contact_custom_attributes },
       retain_original_contact_name: true,
       discard_invalid_attrs: true,
       inbox_id: @web_widget.inbox.id
@@ -116,7 +116,7 @@ class Api::V1::Widget::ConversationsController < Api::V1::Widget::BaseController
   end
 
   def permitted_params
-    params.permit(:id, :typing_status, :website_token, :email, contact: [:name, :email, :phone_number],
+    params.permit(:id, :typing_status, :website_token, :email, contact: [:name, :email, :phone_number, { custom_attributes: {} }],
                                                                message: [:content, :referer_url, :timestamp, :echo_id],
                                                                custom_attributes: {})
   end

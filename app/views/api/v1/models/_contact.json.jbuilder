@@ -7,6 +7,7 @@ json.phone_number resource.phone_number
 json.blocked resource.blocked
 json.blocked_until resource.blocked_until&.iso8601
 json.identifier resource.identifier
+json.company_id resource.company_id if Current.account&.feature_enabled?('companies')
 json.thumbnail resource.avatar_url
 json.custom_attributes resource.custom_attributes
 json.last_activity_at resource.last_activity_at.to_i if resource[:last_activity_at].present?

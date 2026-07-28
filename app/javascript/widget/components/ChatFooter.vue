@@ -13,6 +13,8 @@ import { emitter } from 'shared/helpers/mitt';
 import FluentIcon from 'shared/components/FluentIcon/Index.vue';
 import { useCsatRequest } from '../composables/useCsatRequest';
 
+const TRANSCRIPT_COOLDOWN_MS = 15000;
+
 export default {
   components: {
     ChatInputWrap,
@@ -28,6 +30,9 @@ export default {
   data() {
     return {
       inReplyTo: null,
+      isSendingTranscript: false,
+      transcriptCooldown: false,
+      transcriptCooldownTimer: null,
     };
   },
   computed: {
@@ -60,6 +65,9 @@ export default {
   },
   mounted() {
     emitter.on(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.toggleReplyTo);
+  },
+  beforeUnmount() {
+    clearTimeout(this.transcriptCooldownTimer);
   },
   methods: {
     ...mapActions('conversation', [
@@ -101,19 +109,35 @@ export default {
     toggleReplyTo(message) {
       this.inReplyTo = message;
     },
+    startTranscriptCooldown() {
+      this.transcriptCooldown = true;
+      clearTimeout(this.transcriptCooldownTimer);
+      this.transcriptCooldownTimer = setTimeout(() => {
+        this.transcriptCooldown = false;
+      }, TRANSCRIPT_COOLDOWN_MS);
+    },
     async sendTranscript() {
-      if (this.hasEmail) {
-        try {
-          await sendEmailTranscript();
-          emitter.emit(BUS_EVENTS.SHOW_ALERT, {
-            message: this.$t('EMAIL_TRANSCRIPT.SEND_EMAIL_SUCCESS'),
-            type: 'success',
-          });
-        } catch (error) {
-          emitter.$emit(BUS_EVENTS.SHOW_ALERT, {
-            message: this.$t('EMAIL_TRANSCRIPT.SEND_EMAIL_ERROR'),
-          });
-        }
+      if (
+        !this.hasEmail ||
+        this.isSendingTranscript ||
+        this.transcriptCooldown
+      ) {
+        return;
+      }
+      this.isSendingTranscript = true;
+      try {
+        await sendEmailTranscript();
+        this.startTranscriptCooldown();
+        emitter.emit(BUS_EVENTS.SHOW_ALERT, {
+          message: this.$t('EMAIL_TRANSCRIPT.SEND_EMAIL_SUCCESS'),
+          type: 'success',
+        });
+      } catch (error) {
+        emitter.emit(BUS_EVENTS.SHOW_ALERT, {
+          message: this.$t('EMAIL_TRANSCRIPT.SEND_EMAIL_ERROR'),
+        });
+      } finally {
+        this.isSendingTranscript = false;
       }
     },
   },
@@ -166,6 +190,7 @@ export default {
       v-if="showEmailTranscriptButton"
       type="clear"
       class="font-normal"
+      :disabled="isSendingTranscript || transcriptCooldown"
       @click="sendTranscript"
     >
       {{ $t('EMAIL_TRANSCRIPT.BUTTON_TEXT') }}

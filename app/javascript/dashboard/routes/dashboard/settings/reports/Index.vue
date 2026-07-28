@@ -163,6 +163,11 @@ export default {
       show-time-range-filter
       @filter-change="onFilterChange"
     />
-    <ReportContainer :group-by="groupBy" />
+    <ReportContainer
+      :group-by="groupBy"
+      :from="from"
+      :to="to"
+      :business-hours="businessHours"
+    />
   </div>
 </template>
