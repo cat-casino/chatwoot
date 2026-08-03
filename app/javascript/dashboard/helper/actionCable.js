@@ -128,10 +128,18 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onAssigneeChanged = payload => {
-    const { id } = payload;
+    const { id, meta, messages: seedMessages } = payload;
     if (id) {
       this.app.$store.dispatch('updateConversation', payload);
       DashboardAudioNotificationHelper.onAssigneeChanged(payload);
+
+      const currentUserId = this.app.$store.getters.getCurrentUser?.id;
+      if (meta?.assignee?.id && meta.assignee.id === currentUserId) {
+        this.app.$store.dispatch('reloadConversationMessages', {
+          conversationId: id,
+          seedMessages,
+        });
+      }
     }
     this.fetchConversationStats();
   };

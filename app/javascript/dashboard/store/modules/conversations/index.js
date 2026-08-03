@@ -1,7 +1,7 @@
 import types from '../../mutation-types';
 import getters, { getSelectedChatConversation } from './getters';
 import actions from './actions';
-import { findPendingMessageIndex } from './helpers';
+import { findPendingMessageIndex, pushMessageInOrder } from './helpers';
 import { MESSAGE_STATUS } from 'shared/constants/messages';
 import wootConstants from 'dashboard/constants/globals';
 import { BUS_EVENTS } from '../../../../shared/constants/busEvents';
@@ -214,11 +214,14 @@ export const mutations = {
     });
     if (!chat) return;
 
-    const pendingMessageIndex = findPendingMessageIndex(chat, message);
-    if (pendingMessageIndex !== -1) {
-      chat.messages[pendingMessageIndex] = message;
+    const { index, staleIndex } = findPendingMessageIndex(chat, message);
+    if (index !== -1) {
+      chat.messages[index] = message;
+      if (staleIndex !== -1) {
+        chat.messages.splice(staleIndex, 1);
+      }
     } else {
-      chat.messages.push(message);
+      pushMessageInOrder(chat, message);
 
       const isAgentOrContact =
         message.message_type === 0 ||

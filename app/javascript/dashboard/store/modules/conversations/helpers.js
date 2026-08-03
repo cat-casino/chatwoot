@@ -1,10 +1,45 @@
 import { CONVERSATION_PRIORITY_ORDER } from 'shared/constants/messages';
 
+/**
+ * Appends a message to a chat's message list, keeping the list ordered by
+ * `created_at`. Messages are usually delivered in order, but a message can
+ * arrive late (e.g. a backlogged websocket broadcast for a note written by
+ * another agent while the conversation was assigned to them) after messages
+ * created after it were already appended (e.g. the current agent's own
+ * optimistically-added message). Sorting on insert avoids showing messages
+ * out of chronological order until the page is reloaded.
+ */
+export const pushMessageInOrder = (chat, message) => {
+  chat.messages.push(message);
+  chat.messages.sort((a, b) => a.created_at - b.created_at);
+};
+
+/**
+ * Resolves where an incoming message belongs in a chat's message list.
+ *
+ * A pending (optimistically added) message and its "real" counterpart can
+ * briefly coexist: the real message may arrive over websocket before the
+ * pending send request resolves, leaving a stale pending entry (matched by
+ * `echo_id`) alongside it. Returning both indices lets the caller update the
+ * correct entry and drop the stale one instead of ending up with duplicates.
+ *
+ * @returns {{ index: number, staleIndex: number }} `index` is where the
+ * message should be written (-1 if it should be appended). `staleIndex` is
+ * a leftover pending entry to remove, if any (-1 if none).
+ */
 export const findPendingMessageIndex = (chat, message) => {
   const { echo_id: tempMessageId } = message;
-  return chat.messages.findIndex(
-    m => m.id === message.id || m.id === tempMessageId
-  );
+  const realIndex = chat.messages.findIndex(m => m.id === message.id);
+  const pendingIndex =
+    tempMessageId != null
+      ? chat.messages.findIndex(m => m.id === tempMessageId)
+      : -1;
+
+  if (realIndex !== -1) {
+    const staleIndex = pendingIndex !== realIndex ? pendingIndex : -1;
+    return { index: realIndex, staleIndex };
+  }
+  return { index: pendingIndex, staleIndex: -1 };
 };
 
 export const filterByStatus = (chatStatus, filterStatus) => {
