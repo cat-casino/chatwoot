@@ -160,21 +160,6 @@ class ReportsAPI extends ApiClient {
     return axios.get(`${this.url}/drilldown`, requestConfig);
   }
 
-  // eslint-disable-next-line default-param-last
-  getSummary(since, until, type = 'account', id, groupBy, businessHours) {
-    return axios.get(`${this.url}/summary`, {
-      params: {
-        since,
-        until,
-        type,
-        id,
-        group_by: groupBy,
-        business_hours: businessHours,
-        timezone_offset: getTimeOffset(),
-      },
-    });
-  }
-
   getConversationMetric(type = 'account', page = 1) {
     return axios.get(`${this.url}/conversations`, {
       params: { type, page },
