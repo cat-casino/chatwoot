@@ -24,6 +24,14 @@ class ConversationApi extends ApiClient {
     return axios.post(`${this.url}/${conversationId}/force_transfer`);
   }
 
+  getQueue(conversationId) {
+    return axios.get(`${this.url}/${conversationId}/queue`);
+  }
+
+  leaveQueue(conversationId) {
+    return axios.delete(`${this.url}/${conversationId}/queue`);
+  }
+
   hideConversation(conversationId) {
     return axios.post(`${this.url}/${conversationId}/mark_resolved_dismissed`);
   }

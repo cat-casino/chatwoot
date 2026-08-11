@@ -167,6 +167,7 @@ Rails.application.routes.draw do
               resource :direct_uploads, only: [:create]
               resource :draft_messages, only: [:show, :update, :destroy]
               post :force_transfer, to: 'force_transfers#create'
+              resource :queue, only: [:show, :destroy], controller: 'queues'
             end
             member do
               post :mute
