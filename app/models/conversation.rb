@@ -559,13 +559,18 @@ end
 
   def remove_from_queue_if_status_changed
     return unless saved_change_to_status?
-  
+    return unless account.queue_enabled?
+
     old_status, new_status = saved_change_to_status
-  
-    return unless old_status == 'queued' && new_status != 'queued'
-  
-    reason = new_status == 'resolved' ? :resolved : :other
-  
+
+    reason = if new_status == 'resolved'
+               :resolved
+             elsif old_status == 'queued' && new_status != 'queued'
+               :other
+             else
+               return
+             end
+
     ChatQueue::QueueService.new(account: account)
                            .remove_from_queue(self, reason: reason)
   end
