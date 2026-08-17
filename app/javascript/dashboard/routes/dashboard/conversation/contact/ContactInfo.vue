@@ -7,9 +7,8 @@ import {
   ExceptionWithMessage,
 } from 'shared/helpers/CustomErrors';
 import { dynamicTime } from 'shared/helpers/timeHelper';
-import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useMapGetter } from 'dashboard/composables/store';
-import { CONTACT_PERMISSIONS } from 'dashboard/constants/permissions.js';
+import { CONTACT_ACCESS_PERMISSIONS } from 'dashboard/constants/permissions.js';
 import {
   getUserPermissions,
   hasPermissions,
@@ -50,7 +49,6 @@ export default {
   },
   emits: ['panelClose'],
   setup() {
-    const { isAdmin } = useAdmin();
     const currentUser = useMapGetter('getCurrentUser');
     const currentAccountId = useMapGetter('getCurrentAccountId');
 
@@ -61,14 +59,42 @@ export default {
       );
 
       return hasPermissions(
-        ['administrator', CONTACT_PERMISSIONS],
+        ['administrator', ...CONTACT_ACCESS_PERMISSIONS],
         permissions
       );
     });
 
+    const currentPermissions = computed(() =>
+      getUserPermissions(currentUser.value, currentAccountId.value)
+    );
+
+    const canEditContact = computed(() => {
+      if (
+        hasPermissions(
+          ['administrator', 'contact_manage', 'contact_edit'],
+          currentPermissions.value
+        )
+      ) {
+        return true;
+      }
+
+      return (
+        hasPermissions(['agent'], currentPermissions.value) &&
+        !hasPermissions(['custom_role'], currentPermissions.value)
+      );
+    });
+
+    const canDeleteContact = computed(() =>
+      hasPermissions(
+        ['administrator', 'contact_delete'],
+        currentPermissions.value
+      )
+    );
+
     return {
-      isAdmin,
       canViewContactProfile,
+      canEditContact,
+      canDeleteContact,
     };
   },
   data() {
@@ -256,12 +282,16 @@ export default {
           />
           <h3
             v-else
-            class="group/name flex-shrink max-w-full min-w-0 my-0 text-base capitalize break-words text-n-slate-12 cursor-pointer hover:text-n-slate-12/80"
-            :title="$t('CONTACT_PANEL.CLICK_TO_EDIT')"
-            @click="startEditingName"
+            class="group/name flex-shrink max-w-full min-w-0 my-0 text-base capitalize break-words text-n-slate-12"
+            :class="{
+              'cursor-pointer hover:text-n-slate-12/80': canEditContact,
+            }"
+            :title="canEditContact ? $t('CONTACT_PANEL.CLICK_TO_EDIT') : ''"
+            @click="canEditContact && startEditingName()"
           >
             {{ contact.name }}
             <span
+              v-if="canEditContact"
               class="i-lucide-pencil text-xs text-n-slate-10 opacity-0 group-hover/name:opacity-100 transition-opacity ml-1 align-middle"
             />
           </h3>
@@ -298,7 +328,7 @@ export default {
             emoji="✉️"
             :title="$t('CONTACT_PANEL.EMAIL_ADDRESS')"
             show-copy
-            editable
+            :editable="canEditContact"
             @update="value => onFieldUpdate('email', value)"
           />
           <ContactInfoRow
@@ -308,7 +338,7 @@ export default {
             emoji="📞"
             :title="$t('CONTACT_PANEL.PHONE_NUMBER')"
             show-copy
-            editable
+            :editable="canEditContact"
             @update="value => onFieldUpdate('phone_number', value)"
           />
           <ContactInfoRow
@@ -323,7 +353,7 @@ export default {
             icon="building-bank"
             emoji="🏢"
             :title="$t('CONTACT_PANEL.COMPANY')"
-            editable
+            :editable="canEditContact"
             @update="
               value =>
                 updateContactField({
@@ -383,6 +413,7 @@ export default {
           :tooltip-label="$t('CONTACT_PANEL.CALL')"
         />
         <NextButton
+          v-if="canEditContact"
           v-tooltip.top-end="$t('EDIT_CONTACT.BUTTON_LABEL')"
           icon="i-ph-pencil-simple"
           slate
@@ -403,7 +434,7 @@ export default {
           </template>
         </ContactMergeModal>
         <ContactDeleteModal
-          v-if="isAdmin"
+          v-if="canDeleteContact"
           :contact="contact"
           @deleted="$emit('panelClose')"
         >
