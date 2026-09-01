@@ -1,25 +1,4 @@
-export const formatTime = timeInSeconds => {
-  if (!timeInSeconds) {
-    return '';
-  }
-
-  if (timeInSeconds < 60) {
-    return `${timeInSeconds}s`;
-  }
-
-  if (timeInSeconds < 3600) {
-    const minutes = Math.floor(timeInSeconds / 60);
-    return `${minutes}m`;
-  }
-
-  if (timeInSeconds < 86400) {
-    const hours = Math.floor(timeInSeconds / 3600);
-    return `${hours}h`;
-  }
-
-  const days = Math.floor(timeInSeconds / 86400);
-  return `${days}d`;
-};
+import { formatTime } from '@chatwoot/utils';
 
 export const GROUP_BY_FILTER = {
   1: { id: 1, period: 'day' },

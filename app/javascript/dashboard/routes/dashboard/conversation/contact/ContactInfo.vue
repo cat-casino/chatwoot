@@ -6,7 +6,7 @@ import {
   DuplicateContactException,
   ExceptionWithMessage,
 } from 'shared/helpers/CustomErrors';
-import { dynamicTime } from 'shared/helpers/timeHelper';
+import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
 import { useMapGetter } from 'dashboard/composables/store';
 import { CONTACT_ACCESS_PERMISSIONS } from 'dashboard/constants/permissions.js';
 import {
@@ -95,6 +95,7 @@ export default {
       canViewContactProfile,
       canEditContact,
       canDeleteContact,
+      exactTimestamp: useExactTimestamp(),
     };
   },
   data() {
@@ -182,7 +183,6 @@ export default {
     },
   },
   methods: {
-    dynamicTime,
     toggleEditModal() {
       this.showEditModal = !this.showEditModal;
     },
@@ -269,37 +269,50 @@ export default {
       </div>
 
       <div class="flex flex-col items-start gap-1.5 min-w-0 w-full">
-        <div v-if="showAvatar" class="flex items-center w-full min-w-0 gap-3">
-          <InlineInput
-            v-if="isEditingName"
-            ref="nameInput"
-            v-model="editName"
-            custom-input-class="!text-base !font-medium"
-            class="!w-fit"
-            @enter-press="saveNameEdit"
-            @escape-press="cancelNameEdit"
-            @blur="saveNameEdit"
-          />
-          <h3
-            v-else
-            class="group/name flex-shrink max-w-full min-w-0 my-0 text-base capitalize break-words text-n-slate-12"
-            :class="{
-              'cursor-pointer hover:text-n-slate-12/80': canEditContact,
-            }"
-            :title="canEditContact ? $t('CONTACT_PANEL.CLICK_TO_EDIT') : ''"
-            @click="canEditContact && startEditingName()"
-          >
-            {{ contact.name }}
-            <span
-              v-if="canEditContact"
-              class="i-lucide-pencil text-xs text-n-slate-10 opacity-0 group-hover/name:opacity-100 transition-opacity ml-1 align-middle"
+        <div v-if="showAvatar" class="flex items-center w-full min-w-0 gap-2">
+          <div class="group/name flex items-center min-w-0 gap-2">
+            <InlineInput
+              v-if="isEditingName"
+              ref="nameInput"
+              v-model="editName"
+              custom-input-class="!text-base !font-medium !w-auto max-w-full [field-sizing:content]"
+              class="!w-fit min-w-0"
+              @enter-press="saveNameEdit"
+              @escape-press="cancelNameEdit"
+              @blur="saveNameEdit"
             />
-          </h3>
+            <h3
+              v-else
+              class="flex-shrink max-w-full min-w-0 my-0 text-base capitalize break-words text-n-slate-12"
+              :class="{
+                'cursor-pointer hover:text-n-slate-12/80': canEditContact,
+              }"
+              :title="canEditContact ? $t('CONTACT_PANEL.CLICK_TO_EDIT') : ''"
+              @click="canEditContact && startEditingName()"
+            >
+              {{ contact.name }}
+            </h3>
+            <NextButton
+              v-if="canEditContact"
+              ghost
+              xs
+              slate
+              icon="i-lucide-pencil"
+              :title="$t('CONTACT_PANEL.CLICK_TO_EDIT')"
+              class="flex-shrink-0 -mx-1 opacity-0 transition-opacity"
+              :class="
+                isEditingName
+                  ? 'invisible'
+                  : 'group-hover/name:opacity-100 focus-visible:opacity-100'
+              "
+              @click="startEditingName"
+            />
+          </div>
           <div class="flex flex-row items-center gap-2">
             <span
               v-if="contact.created_at"
               v-tooltip.left="
-                `${$t('CONTACT_PANEL.CREATED_AT_LABEL')} ${dynamicTime(
+                `${$t('CONTACT_PANEL.CREATED_AT_LABEL')} ${exactTimestamp(
                   contact.created_at
                 )}`
               "

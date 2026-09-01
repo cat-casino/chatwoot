@@ -138,7 +138,8 @@ class Api::V1::Accounts::CannedResponsesController < Api::V1::Accounts::BaseCont
     scope = scope.includes(:canned_response_scopes)
     return scope unless params[:search]
 
-    scope.where('short_code ILIKE :search OR content ILIKE :search', search: "%#{params[:search]}%")
-         .order_by_search(params[:search])
+    search = params[:search].delete("\0")
+    scope.where('short_code ILIKE :search OR content ILIKE :search', search: "%#{search}%")
+         .order_by_search(search)
   end
 end

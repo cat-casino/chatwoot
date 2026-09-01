@@ -18,6 +18,8 @@
 #
 
 class CannedResponse < ApplicationRecord
+  include AccountCacheRevalidator
+
   enum visibility: { public_response: 0, private_response: 1 }
 
   belongs_to :account

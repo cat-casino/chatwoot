@@ -12,12 +12,13 @@ json.meta do
       json.partial! 'api/v1/models/agent_bot_slim', formats: [:json], resource: conversation.assigned_entity
     end
     json.assignee_type 'AgentBot'
-  elsif conversation.assigned_entity&.account
+  elsif conversation.assignee_type == 'User'
     json.assignee do
       json.partial! 'api/v1/models/agent', formats: [:json], resource: conversation.assigned_entity
     end
     json.assignee_type 'User'
   end
+  json.partial! 'enterprise/api/v1/conversations/partials/assignee', conversation: conversation if ChatwootApp.enterprise?
   if conversation.team.present?
     json.team do
       json.partial! 'api/v1/models/team', formats: [:json], resource: conversation.team
@@ -27,23 +28,27 @@ json.meta do
 end
 
 json.id conversation.display_id
-if conversation.messages.where(account_id: conversation.account_id).last.blank?
+# The dashboard seeds the message thread from this array and then paginates BACKWARD
+# by id (before: messages[0].id). Keep the seed as the chronologically latest message,
+# but add an id tiebreaker: without it, same-second siblings (e.g. the input_csat survey
+# created alongside activity messages during an auto-resolve burst) could resolve to a
+# lower-id activity, and backward pagination would then never load the higher-id survey.
+last_message = conversation.messages.where(account_id: conversation.account_id)
+                           .includes([{ attachments: [{ file_attachment: [:blob] }] }])
+                           .reorder(created_at: :desc, id: :desc).first
+if last_message.blank?
   json.messages []
-else
+elsif params[:include_messages] == 'true'
   messages = conversation.messages.where(account_id: conversation.account_id)
                          .includes(attachments: { file_attachment: :blob }, sender: { avatar_attachment: [:blob] })
                          .order(:created_at)
-
   json.messages do
-    if params[:include_messages] == 'true'
-      json.array! messages do |message|
-        json.partial!('api/v1/models/message', formats: [:json], message: message)
-      end
-    else
-      last_message = messages.last
-      json.array!([last_message&.push_event_data].compact)
+    json.array! messages do |message|
+      json.partial!('api/v1/models/message', formats: [:json], message: message)
     end
   end
+else
+  json.messages [last_message.try(:push_event_data)]
 end
 
 json.csat_response do
@@ -76,6 +81,6 @@ json.last_non_activity_message conversation.messages.where(account_id: conversat
 json.last_activity_at conversation.last_activity_at.to_i
 json.priority conversation.priority
 json.waiting_since conversation.waiting_since.to_i.to_i
-sla_applicable = !conversation.respond_to?(:sla_applicable?) || conversation.sla_applicable?
+sla_applicable = conversation.account.feature_enabled?('sla') && (!conversation.respond_to?(:sla_applicable?) || conversation.sla_applicable?)
 json.sla_policy_id sla_applicable ? conversation.sla_policy_id : nil
 json.partial! 'enterprise/api/v1/conversations/partials/conversation', conversation: conversation if ChatwootApp.enterprise?

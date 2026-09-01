@@ -8,6 +8,7 @@ import {
   dateFormat,
   shortTimestamp,
 } from 'shared/helpers/timeHelper';
+import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
 
 export default {
   name: 'TimeAgo',
@@ -29,6 +30,9 @@ export default {
       default: '',
     },
   },
+  setup() {
+    return { exactTimestamp: useExactTimestamp() };
+  },
   data() {
     return {
       createdAtTimeAgo: dynamicTime(this.createdAtTimestamp),
@@ -44,15 +48,9 @@ export default {
       return shortTimestamp(this.createdAtTimeAgo);
     },
     createdAt() {
-      const createdTimeDiff = Date.now() - this.createdAtTimestamp * 1000;
-      const isBeforeAMonth = createdTimeDiff > DAY_IN_MILLI_SECONDS * 30;
-      return !isBeforeAMonth
-        ? `${this.$t('CHAT_LIST.CHAT_TIME_STAMP.CREATED.LATEST')} ${
-            this.createdAtTimeAgo
-          }`
-        : `${this.$t('CHAT_LIST.CHAT_TIME_STAMP.CREATED.OLDEST')} ${dateFormat(
-            this.createdAtTimestamp
-          )}`;
+      return `${this.$t(
+        'CHAT_LIST.CHAT_TIME_STAMP.CREATED.OLDEST'
+      )} ${this.exactTimestamp(this.createdAtTimestamp)}`;
     },
     lastActivity() {
       const lastActivityTimeDiff = this.now - this.lastActivityTimestamp * 1000;
@@ -62,8 +60,7 @@ export default {
         : `${this.$t('CHAT_LIST.CHAT_TIME_STAMP.LAST_ACTIVITY.NOT_ACTIVE')} ${dateFormat(this.lastActivityTimestamp)}`;
     },
     tooltipText() {
-      return `${this.createdAt}
-              ${this.lastActivity}`;
+      return `${this.createdAt}\n${this.lastActivity}`;
     },
   },
   watch: {
@@ -138,6 +135,7 @@ export default {
   <div
     v-tooltip.top="{
       content: tooltipText,
+      popperClass: 'whitespace-pre-line',
       delay: { show: 1000, hide: 0 },
     }"
     class="ml-auto leading-4 text-xs text-n-slate-10 hover:text-n-slate-11"

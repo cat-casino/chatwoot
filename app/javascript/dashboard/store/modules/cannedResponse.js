@@ -33,7 +33,23 @@ const getters = {
 };
 
 const actions = {
-  getCannedResponse: async function (
+  revalidateCannedResponses: async function revalidateCannedResponses(
+    { commit },
+    { newKey }
+  ) {
+    try {
+      const isExistingKeyValid =
+        await CannedResponseAPI.validateCacheKey(newKey);
+      if (!isExistingKeyValid) {
+        const response = await CannedResponseAPI.refetchAndCommit(newKey);
+        commit(types.default.SET_CANNED, response.data);
+      }
+    } catch (error) {
+      // Ignore error
+    }
+  },
+
+  getCannedResponse: async function getCannedResponse(
     { commit },
     { searchKey, all = false, inboxId = null } = {}
   ) {

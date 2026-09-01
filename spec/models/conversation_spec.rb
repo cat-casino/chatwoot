@@ -16,6 +16,7 @@ RSpec.describe Conversation do
     it { is_expected.to belong_to(:contact) }
     it { is_expected.to belong_to(:contact_inbox) }
     it { is_expected.to belong_to(:assignee).optional }
+    it { is_expected.to belong_to(:ai_assignee).optional }
     it { is_expected.to belong_to(:team).optional }
     it { is_expected.to belong_to(:campaign).optional }
     it { is_expected.to have_one(:conversation_queue).dependent(:destroy) }
@@ -211,6 +212,17 @@ RSpec.describe Conversation do
       expect(Rails.configuration.dispatcher).to have_received(:dispatch)
         .with(described_class::CONVERSATION_UPDATED, kind_of(Time), conversation: conversation, notifiable_assignee_change: true,
                                                                     changed_attributes: changed_attributes, performed_by: nil)
+    end
+
+    it 'dispatches an assignee changed event when an agent bot is assigned' do
+      conversation = create(:conversation, status: 'open', account: account)
+      agent_bot = create(:agent_bot, account: account)
+
+      conversation.update!(ai_assignee: agent_bot)
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+        .with(described_class::ASSIGNEE_CHANGED, kind_of(Time), conversation: conversation, notifiable_assignee_change: false,
+                                                                changed_attributes: conversation.previous_changes, performed_by: nil)
     end
 
     it 'will not run conversation_updated event for empty updates' do
@@ -503,11 +515,11 @@ RSpec.describe Conversation do
     end
 
     it 'clears agent bot ownership' do
-      conversation.update!(assignee_agent_bot: create(:agent_bot, account: conversation.account))
+      conversation.update!(ai_assignee: create(:agent_bot, account: conversation.account))
 
       conversation.bot_handoff!
 
-      expect(conversation.reload.assignee_agent_bot).to be_nil
+      expect(conversation.reload.ai_assignee).to be_nil
     end
 
     it 'dispatches CONVERSATION_BOT_HANDOFF event' do
@@ -822,7 +834,7 @@ RSpec.describe Conversation do
     end
 
     it 'sets connected agent bot as the conversation owner' do
-      expect(conversation.assignee_agent_bot).to eq(bot_inbox.agent_bot)
+      expect(conversation.ai_assignee).to eq(bot_inbox.agent_bot)
       expect(conversation.assignee).to be_nil
     end
 
@@ -831,7 +843,7 @@ RSpec.describe Conversation do
       conversation = create(:conversation, inbox: bot_inbox.inbox, assignee: agent)
 
       expect(conversation.assignee).to eq(agent)
-      expect(conversation.assignee_agent_bot).to be_nil
+      expect(conversation.ai_assignee).to be_nil
     end
 
     context 'with campaigns' do
@@ -841,14 +853,14 @@ RSpec.describe Conversation do
         campaign = create(:campaign, inbox: bot_inbox.inbox, account: bot_inbox.inbox.account, sender: user)
         conversation = create(:conversation, inbox: bot_inbox.inbox, campaign: campaign)
         expect(conversation.status).to eq('open')
-        expect(conversation.assignee_agent_bot).to be_nil
+        expect(conversation.ai_assignee).to be_nil
       end
 
       it 'returns conversation as pending if campaign has no sender (bot-initiated) and bot is active' do
         campaign = create(:campaign, inbox: bot_inbox.inbox, account: bot_inbox.inbox.account, sender: nil)
         conversation = create(:conversation, inbox: bot_inbox.inbox, campaign: campaign)
         expect(conversation.status).to eq('pending')
-        expect(conversation.assignee_agent_bot).to eq(bot_inbox.agent_bot)
+        expect(conversation.ai_assignee).to eq(bot_inbox.agent_bot)
       end
     end
 
@@ -881,7 +893,7 @@ RSpec.describe Conversation do
     end
 
     it 'does not set agent bot ownership' do
-      expect(conversation.assignee_agent_bot).to be_nil
+      expect(conversation.ai_assignee).to be_nil
     end
   end
 
@@ -1370,6 +1382,30 @@ RSpec.describe Conversation do
         last_reply_event = reply_events.order(event_end_time: :desc).first
         expect(last_reply_event.value).to be_within(60).of(3600) # 1 hour
       end
+    end
+  end
+
+  describe '#status_changed_at' do
+    let(:conversation) { create(:conversation) }
+
+    it 'is set on create' do
+      expect(conversation.status_changed_at).to be_present
+    end
+
+    it 'is updated on every status transition' do
+      original = conversation.status_changed_at
+
+      travel_to(1.hour.from_now) { conversation.update!(status: :resolved) }
+
+      expect(conversation.reload.status_changed_at).to be > original
+    end
+
+    it 'is untouched by non-status saves' do
+      original = conversation.status_changed_at
+
+      travel_to(1.hour.from_now) { conversation.update!(priority: :high) }
+
+      expect(conversation.reload.status_changed_at).to be_within(1.second).of(original)
     end
   end
 end
