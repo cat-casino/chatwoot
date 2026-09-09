@@ -16,6 +16,6 @@ RSpec.describe PriorityGroup, type: :model do
 
   describe 'associations' do
     it { is_expected.to belong_to(:account) }
-    it { is_expected.to have_many(:inboxes).dependent(:destroy) }
+    it { is_expected.to have_many(:inboxes).dependent(:nullify) }
   end
 end

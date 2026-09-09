@@ -1,0 +1,57 @@
+{
+  "PRIORITY_GROUP_MGMT": {
+    "HEADER": "Priority Groups",
+    "HEADER_BTN_TXT": "Add priority group",
+    "LOADING": "Fetching priority groups",
+    "DESCRIPTION": "Priority groups let you organize inboxes into queues so conversations are routed based on priority.",
+    "COUNT": "{n} priority group | {n} priority groups",
+    "SEARCH_PLACEHOLDER": "Search priority groups...",
+    "NO_RESULTS": "No priority groups found matching your search",
+    "LIST": {
+      "404": "There are no priority groups available in this account.",
+      "TABLE_HEADER": {
+        "NAME": "Name",
+        "ACTION": "Actions"
+      }
+    },
+    "FORM": {
+      "NAME": {
+        "LABEL": "Name",
+        "PLACEHOLDER": "Priority group name",
+        "REQUIRED_ERROR": "Name is required"
+      },
+      "EDIT": "Edit",
+      "CREATE": "Create",
+      "DELETE": "Delete",
+      "CANCEL": "Cancel"
+    },
+    "ADD": {
+      "TITLE": "Add priority group",
+      "DESC": "Priority groups let you organize inboxes into queues.",
+      "API": {
+        "SUCCESS_MESSAGE": "Priority group added successfully",
+        "ERROR_MESSAGE": "There was an error, please try again"
+      }
+    },
+    "EDIT": {
+      "TITLE": "Edit priority group",
+      "API": {
+        "SUCCESS_MESSAGE": "Priority group updated successfully",
+        "ERROR_MESSAGE": "There was an error, please try again"
+      }
+    },
+    "DELETE": {
+      "BUTTON_TEXT": "Delete",
+      "API": {
+        "SUCCESS_MESSAGE": "Priority group deleted successfully",
+        "ERROR_MESSAGE": "There was an error, please try again"
+      },
+      "CONFIRM": {
+        "TITLE": "Confirm Deletion",
+        "MESSAGE": "Are you sure to delete ",
+        "YES": "Yes, Delete ",
+        "NO": "No, Keep "
+      }
+    }
+  }
+}

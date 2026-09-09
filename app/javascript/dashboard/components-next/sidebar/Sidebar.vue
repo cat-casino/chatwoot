@@ -879,6 +879,13 @@ const menuItems = computed(() => {
           to: accountScopedRoute('settings_templates'),
         },
         {
+          name: 'Settings Priority Groups',
+          label: t('SIDEBAR.PRIORITY_GROUPS'),
+          icon: 'i-lucide-arrow-up-narrow-wide',
+          activeOn: ['priority_groups_wrapper', 'priority_groups_list'],
+          to: accountScopedRoute('priority_groups_list'),
+        },
+        {
           name: 'Settings Labels',
           label: t('SIDEBAR.LABELS'),
           icon: 'i-lucide-tags',

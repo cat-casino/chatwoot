@@ -443,7 +443,7 @@ Rails.application.routes.draw do
             end
           end
           resources :working_hours, only: [:update]
-          resources :priority_groups, only: [:index]
+          resources :priority_groups, only: [:index, :create, :update, :destroy]
           resources :portals do
             member do
               patch :archive
