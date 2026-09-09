@@ -20,6 +20,8 @@
 #  name                          :string           not null
 #  out_of_office_message         :string
 #  public_name                   :string
+#  queue_notification_enabled    :boolean          default(TRUE), not null
+#  resolution_notification_enabled :boolean        default(TRUE), not null
 #  sender_name_type              :integer          default("friendly"), not null
 #  timezone                      :string           default("UTC")
 #  working_hours_enabled         :boolean          default(FALSE)

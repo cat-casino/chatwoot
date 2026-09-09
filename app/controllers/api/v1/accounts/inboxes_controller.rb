@@ -206,6 +206,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     [:name, :public_name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
      :lock_to_single_conversation, :portal_id, :sender_name_type, :priority_group_id, :business_name,
+     :queue_notification_enabled, :resolution_notification_enabled,
      { csat_config: [:display_type, :message, :message_enabled, :csat_on_resolve_enabled, :button_text, :language, :like_dislike_hint_message, :like_dislike_hint_enabled,
                      { survey_rules: [:operator, { values: [] }],
                        template: [:name, :template_id, :friendly_name, :content_sid, :approval_sid, :created_at, :language, :status] }] }]
