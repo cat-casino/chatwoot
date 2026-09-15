@@ -497,6 +497,7 @@ Rails.application.routes.draw do
             post :backup_codes
           end
           resources :sessions, only: [:index, :destroy]
+          resources :notification_sounds, only: [:index, :create, :destroy]
         end
       end
 

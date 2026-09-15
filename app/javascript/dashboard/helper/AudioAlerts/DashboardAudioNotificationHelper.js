@@ -1,23 +1,24 @@
 import { MESSAGE_TYPE } from 'shared/constants/messages';
-import { showBadgeOnFavicon } from './faviconHelper';
-import { initFaviconSwitcher } from './faviconHelper';
+import { showBadgeOnFavicon, initFaviconSwitcher } from './faviconHelper';
 
 import { EVENT_TYPES } from 'dashboard/routes/dashboard/settings/profile/constants.js';
 import GlobalStore from 'dashboard/store';
 import AudioNotificationStore from './AudioNotificationStore';
+import { AudioNotificationService } from './AudioNotificationService';
+import { isConversationMuted } from 'dashboard/composables/useMutedConversations';
 import {
   isConversationAssignedToMe,
   isConversationUnassigned,
   isMessageFromCurrentUser,
 } from './AudioMessageHelper';
 import WindowVisibilityHelper from './WindowVisibilityHelper';
-import { useAlert } from 'dashboard/composables';
 
 const NOTIFICATION_TIME = 30000;
-const ALERT_DURATION = 10000;
-const ALERT_PATH_PREFIX = '/audio/dashboard/';
 const DEFAULT_TONE = 'ding';
 const DEFAULT_ALERT_TYPE = ['none'];
+
+const conversationAssigneeId = conversation =>
+  conversation?.meta?.assignee?.id ?? conversation?.assignee_id;
 
 export class DashboardAudioNotificationHelper {
   constructor(store) {
@@ -25,6 +26,9 @@ export class DashboardAudioNotificationHelper {
       throw new Error('store is required');
     }
     this.store = new AudioNotificationStore(store);
+    this.audioService = new AudioNotificationService(() =>
+      this.store.getSoundSettings()
+    );
 
     this.notificationConfig = {
       audioAlertType: DEFAULT_ALERT_TYPE,
@@ -33,52 +37,33 @@ export class DashboardAudioNotificationHelper {
     };
 
     this.recurringNotificationTimer = null;
-
     this.audioConfig = {
-      audio: null,
       tone: DEFAULT_TONE,
-      hasSentSoundPermissionsRequest: false,
     };
 
     this.currentUser = null;
   }
 
-  intializeAudio = () => {
-    const resourceUrl = `${ALERT_PATH_PREFIX}${this.audioConfig.tone}.mp3`;
-    this.audioConfig.audio = new Audio(resourceUrl);
-    return this.audioConfig.audio.load();
-  };
-
-  playAudioAlert = async () => {
-    try {
-      await this.audioConfig.audio.play();
-    } catch (error) {
-      if (
-        error.name === 'NotAllowedError' &&
-        !this.hasSentSoundPermissionsRequest
-      ) {
-        this.hasSentSoundPermissionsRequest = true;
-        useAlert(
-          'PROFILE_SETTINGS.FORM.AUDIO_NOTIFICATIONS_SECTION.SOUND_PERMISSION_ERROR',
-          { usei18n: true, duration: ALERT_DURATION }
-        );
-      }
-    }
-  };
-
   onAssigneeChanged = conversation => {
     if (!this.currentUser) return;
 
-    const assignee = conversation?.meta?.assignee;
-    if (!assignee || assignee.id !== this.currentUser.id) return;
+    const assigneeId = conversationAssigneeId(conversation);
+    if (!assigneeId || assigneeId !== this.currentUser.id) return;
 
-    if (
-      this.notificationConfig.playAlertOnlyWhenHidden &&
-      WindowVisibilityHelper.isWindowVisible()
-    )
-      return;
+    if (!this.shouldPlayAlert()) return;
 
-    this.playAudioAlert();
+    this.audioService.playNewConversation();
+    showBadgeOnFavicon();
+    this.playAudioEvery30Seconds();
+  };
+
+  onConversationCreated = conversation => {
+    if (!this.currentUser) return;
+    if (!this.store.hasConversationPermission(this.currentUser)) return;
+    if (!this.shouldNotifyOnConversation(conversation)) return;
+    if (!this.shouldPlayAlert()) return;
+
+    this.audioService.playNewConversation();
     showBadgeOnFavicon();
     this.playAudioEvery30Seconds();
   };
@@ -98,16 +83,10 @@ export class DashboardAudioNotificationHelper {
     };
 
     this.currentUser = currentUser;
-
-    const previousAudioTone = this.audioConfig.tone;
     this.audioConfig = {
       ...this.audioConfig,
       tone: audioAlertTone,
     };
-
-    if (previousAudioTone !== audioAlertTone) {
-      this.intializeAudio();
-    }
 
     initFaviconSwitcher();
     this.clearRecurringTimer();
@@ -122,8 +101,10 @@ export class DashboardAudioNotificationHelper {
   };
 
   executeRecurringNotification = () => {
-    if (this.store.hasUnreadConversation() && this.shouldPlayAlert()) {
-      this.playAudioAlert();
+    const conversationId =
+      this.store.firstUnreadUnmutedConversationId(isConversationMuted);
+    if (conversationId && this.shouldPlayAlert()) {
+      this.audioService.playNewMessage(conversationId);
       showBadgeOnFavicon();
     }
     this.resetRecurringTimer();
@@ -156,16 +137,10 @@ export class DashboardAudioNotificationHelper {
     this.resetRecurringTimer();
   };
 
-  shouldNotifyOnMessage = message => {
+  matchesAlertEvents = ({ assignedToMe, isUnassigned }) => {
     const { audioAlertType } = this.notificationConfig;
     if (audioAlertType.includes('none')) return false;
     if (audioAlertType.includes('all')) return true;
-
-    const assignedToMe = isConversationAssignedToMe(
-      message,
-      this.currentUser.id
-    );
-    const isUnassigned = isConversationUnassigned(message);
 
     const shouldPlayAudio = [];
 
@@ -183,6 +158,21 @@ export class DashboardAudioNotificationHelper {
     }
 
     return shouldPlayAudio.some(Boolean);
+  };
+
+  shouldNotifyOnConversation = conversation => {
+    const assigneeId = conversationAssigneeId(conversation);
+    return this.matchesAlertEvents({
+      assignedToMe: assigneeId === this.currentUser.id,
+      isUnassigned: !assigneeId,
+    });
+  };
+
+  shouldNotifyOnMessage = message => {
+    return this.matchesAlertEvents({
+      assignedToMe: isConversationAssignedToMe(message, this.currentUser.id),
+      isUnassigned: isConversationUnassigned(message),
+    });
   };
 
   onNewMessage = message => {
@@ -225,7 +215,7 @@ export class DashboardAudioNotificationHelper {
       }
     }
 
-    this.playAudioAlert();
+    this.audioService.playNewMessage(message.conversation_id);
     showBadgeOnFavicon();
     this.playAudioEvery30Seconds();
   };

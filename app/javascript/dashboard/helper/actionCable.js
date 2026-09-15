@@ -150,6 +150,7 @@ class ActionCableConnector extends BaseActionCableConnector {
     if (!this.canAccessConversation(data)) return;
 
     this.app.$store.dispatch('addConversation', data);
+    DashboardAudioNotificationHelper.onConversationCreated(data);
     this.fetchConversationStats();
   };
 
