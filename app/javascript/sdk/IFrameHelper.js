@@ -273,12 +273,13 @@ export const IFrameHelper = {
       }
 
       const bubbleElement = document.querySelector('.woot-widget-bubble');
-      if (
-        event.unreadMessageCount > 0 &&
-        !bubbleElement.classList.contains('unread-notification')
-      ) {
+      if (!bubbleElement) {
+        return;
+      }
+
+      if (event.unreadMessageCount > 0) {
         addClasses(bubbleElement, 'unread-notification');
-      } else if (event.unreadMessageCount === 0) {
+      } else {
         removeClasses(bubbleElement, 'unread-notification');
       }
     },

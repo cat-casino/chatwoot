@@ -79,6 +79,11 @@ export default {
     // dot updates while the bubble is hidden, so refresh it when it is back.
     unreadMessageCount() {
       this.handleUnreadNotificationDot();
+      this.setUnreadView();
+    },
+    showOutboundNotification() {
+      this.handleUnreadNotificationDot();
+      this.setUnreadView();
     },
     hideMessageBubble() {
       this.handleUnreadNotificationDot();
@@ -256,11 +261,11 @@ export default {
       }
     },
     handleUnreadNotificationDot() {
-      const { unreadMessageCount } = this;
       if (this.isIFrame) {
         IFrameHelper.sendMessage({
           event: 'handleNotificationDot',
-          unreadMessageCount,
+          unreadMessageCount:
+            this.unreadMessageCount || (this.showOutboundNotification ? 1 : 0),
         });
       }
     },
@@ -403,7 +408,7 @@ export default {
 
 <template>
   <div
-    v-if="!conversationSize && isFetchingList"
+    v-if="!conversationSize && isFetchingList && !isUnreadOrCampaignView"
     class="flex items-center justify-center flex-1 h-full bg-n-background"
     :class="{ dark: prefersDarkMode }"
   >

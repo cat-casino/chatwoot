@@ -43,7 +43,9 @@ export const getters = {
       Object.values(_state.conversations)
         .slice()
         .reverse()
-        .find(message => message.message_type === MESSAGE_TYPE.OUTGOING) || {}
+        .find(
+          message => Number(message.message_type) === MESSAGE_TYPE.OUTGOING
+        ) || {}
     );
   },
   getMessageCount: _state => {
@@ -53,7 +55,7 @@ export const getters = {
     const { userLastSeenAt } = _state.meta;
     return Object.values(_state.conversations).filter(chat => {
       const { created_at: createdAt, message_type: messageType } = chat;
-      const isOutGoing = messageType === MESSAGE_TYPE.OUTGOING;
+      const isOutGoing = Number(messageType) === MESSAGE_TYPE.OUTGOING;
       const hasNotSeen = userLastSeenAt
         ? createdAt * 1000 > userLastSeenAt * 1000
         : true;
@@ -65,7 +67,7 @@ export const getters = {
     const allMessages = [...Object.values(_state.conversations)];
     const unreadAgentMessages = allMessages.filter(message => {
       const { message_type: messageType } = message;
-      return messageType === MESSAGE_TYPE.OUTGOING;
+      return Number(messageType) === MESSAGE_TYPE.OUTGOING;
     });
     const maxUnreadCount = Math.min(unreadCount, 3);
     return unreadAgentMessages.splice(-maxUnreadCount);

@@ -11,7 +11,11 @@ import {
   requestCSATAPI,
 } from 'widget/api/conversation';
 
-import { ON_CONVERSATION_CREATED } from 'widget/constants/widgetBusEvents';
+import {
+  ON_AGENT_MESSAGE_RECEIVED,
+  ON_CONVERSATION_CREATED,
+} from 'widget/constants/widgetBusEvents';
+import { MESSAGE_TYPE } from 'widget/helpers/constants';
 import { createTemporaryMessage, getNonDeletedMessages } from './helpers';
 import { emitter } from 'shared/helpers/mitt';
 export const actions = {
@@ -165,6 +169,13 @@ export const actions = {
       );
       commit('conversation/setMetaUserLastSeenAt', lastSeen, { root: true });
       commit('setMissingMessagesInConversation', updatedConversation);
+
+      const hasOutgoingAgentMessage = missingMessages.some(
+        message => Number(message.message_type) === MESSAGE_TYPE.OUTGOING
+      );
+      if (hasOutgoingAgentMessage) {
+        emitter.emit(ON_AGENT_MESSAGE_RECEIVED);
+      }
     } catch (error) {
       // IgnoreError
     }

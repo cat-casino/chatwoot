@@ -215,8 +215,24 @@
 .woot-widget--without-bubble {
   bottom: 20px !important;
 }
+/* Keep the closed iframe in the viewport. Off-screen + visibility:hidden
+   lets browsers freeze JS/WebSocket, so agent messages never trigger unread UI. */
 .woot-widget-holder.woot--hide {
-  transform: translateY(40px);
+  bottom: 0 !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: 1px !important;
+  opacity: 0 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+  transform: none !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  z-index: -1 !important;
 }
 .woot-widget-bubble.woot--close {
   transform: translateX(0px) scale(1) rotate(0deg);

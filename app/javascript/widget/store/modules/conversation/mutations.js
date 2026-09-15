@@ -72,7 +72,7 @@ export const mutations = {
   },
 
   setMissingMessagesInConversation($state, payload) {
-    $state.conversation = payload;
+    $state.conversations = payload;
   },
 
   updateMessage($state, { id, content_attributes }) {
