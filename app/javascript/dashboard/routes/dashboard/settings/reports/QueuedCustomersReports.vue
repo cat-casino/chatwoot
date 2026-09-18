@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { formatTime } from '@chatwoot/utils';
 import { emitter } from 'shared/helpers/mitt';
 
@@ -9,6 +10,8 @@ import BarChart from 'shared/components/charts/BarChart.vue';
 import BaseHeatmap from './components/heatmaps/BaseHeatmap.vue';
 import ReportHeader from './components/ReportHeader.vue';
 import ReportFilterSelector from './components/FilterSelector.vue';
+
+const { t } = useI18n();
 
 const POLL_INTERVAL = 30_000;
 
@@ -73,47 +76,62 @@ const waitingCards = computed(() => [
 ]);
 
 const queueFlowCollection = computed(() => {
-  const labels = queuedReport.value.daily.map(item => item.date);
+  const categories = queuedReport.value.daily.map(item => item.date);
   return {
-    labels,
-    datasets: [
+    categories,
+    series: [
       {
-        label: 'Queued',
+        id: 'queued_customers',
+        label: t('QUEUED_CUSTOMERS_REPORTS.CARDS.QUEUED_CUSTOMERS'),
+        color: 'rgb(var(--iris-9))',
         data: queuedReport.value.daily.map(item => item.queued_customers),
-        backgroundColor: '#3B82F6',
       },
       {
-        label: 'Entered chat',
+        id: 'entered_chat',
+        label: t('QUEUED_CUSTOMERS_REPORTS.CARDS.ENTERED_CHAT'),
+        color: 'rgb(var(--teal-9))',
         data: queuedReport.value.daily.map(item => item.entered_chat),
-        backgroundColor: '#10B981',
       },
       {
-        label: 'Left queue',
+        id: 'left_queue',
+        label: t('QUEUED_CUSTOMERS_REPORTS.CARDS.LEFT_QUEUE'),
+        color: 'rgb(var(--amber-9))',
         data: queuedReport.value.daily.map(item => item.left_queue),
-        backgroundColor: '#F97316',
       },
     ],
   };
 });
 
 const waitingTimeCollection = computed(() => {
-  const labels = queuedReport.value.daily.map(item => item.date);
+  const categories = queuedReport.value.daily.map(item => item.date);
   return {
-    labels,
-    datasets: [
+    categories,
+    series: [
       {
-        label: 'Time to enter chat',
+        id: 'time_to_enter_chat',
+        label: t('QUEUED_CUSTOMERS_REPORTS.CARDS.TIME_TO_ENTER_CHAT'),
+        color: 'rgb(var(--iris-9))',
         data: queuedReport.value.daily.map(item => item.time_to_enter_chat),
-        backgroundColor: '#6366F1',
       },
       {
-        label: 'Time to leave queue',
+        id: 'time_to_leave_queue',
+        label: t('QUEUED_CUSTOMERS_REPORTS.CARDS.TIME_TO_LEAVE_QUEUE'),
+        color: 'rgb(var(--ruby-9))',
         data: queuedReport.value.daily.map(item => item.time_to_leave_queue),
-        backgroundColor: '#EC4899',
       },
     ],
   };
 });
+
+const formatHeatmapValue = value => {
+  if (!value) {
+    return t('QUEUED_CUSTOMERS_REPORTS.HEATMAP.NO_CUSTOMERS');
+  }
+
+  return value === 1
+    ? t('QUEUED_CUSTOMERS_REPORTS.HEATMAP.CUSTOMER', { count: value })
+    : t('QUEUED_CUSTOMERS_REPORTS.HEATMAP.CUSTOMERS', { count: value });
+};
 
 const fetchQueuedCustomers = async ({ showLoader = false } = {}) => {
   if (!filters.value.from) return;
@@ -217,7 +235,8 @@ onUnmounted(() => {
         </div>
         <BarChart
           v-if="queuedReport.daily.length"
-          :collection="queueFlowCollection"
+          :data="queueFlowCollection"
+          :aria-label="$t('QUEUED_CUSTOMERS_REPORTS.QUEUE_FLOW_ARIA_LABEL')"
         />
       </div>
     </section>
@@ -248,7 +267,8 @@ onUnmounted(() => {
         </div>
         <BarChart
           v-if="queuedReport.daily.length"
-          :collection="waitingTimeCollection"
+          :data="waitingTimeCollection"
+          :aria-label="$t('QUEUED_CUSTOMERS_REPORTS.WAITING_TIME_ARIA_LABEL')"
         />
       </div>
     </section>
@@ -265,6 +285,8 @@ onUnmounted(() => {
           :number-of-rows="7"
           :is-loading="loading"
           color-scheme="green"
+          :aria-label="$t('QUEUED_CUSTOMERS_REPORTS.HEATMAP_ARIA_LABEL')"
+          :format-value="formatHeatmapValue"
         />
       </div>
     </section>
