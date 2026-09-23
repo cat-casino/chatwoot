@@ -84,6 +84,9 @@
     },
     "SUCCESS_DELETE_MESSAGE": "Message deleted successfully",
     "FAIL_DELETE_MESSSAGE": "Couldn't delete message! Try again",
+    "DELETED_AUDIT_NOTE": {
+      "BADGE": "Deleted"
+    },
     "NO_RESPONSE": "No response",
     "RESPONSE": "Response",
     "RATING_TITLE": "Rating",

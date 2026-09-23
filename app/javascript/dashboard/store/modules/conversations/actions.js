@@ -380,6 +380,14 @@ const actions = {
   },
 
   updateMessage({ commit, rootGetters }, message) {
+    if (message.content_attributes?.deleted) {
+      commit(types.DELETE_MESSAGE, {
+        conversationId: message.conversation_id,
+        id: message.id,
+      });
+      return;
+    }
+
     commit(types.ADD_MESSAGE, message);
     handleVoiceCallUpdated(
       commit,
@@ -394,9 +402,13 @@ const actions = {
     { conversationId, messageId }
   ) {
     try {
-      const { data } = await MessageApi.delete(conversationId, messageId);
-      commit(types.ADD_MESSAGE, data);
-      commit(types.DELETE_CONVERSATION_ATTACHMENTS, data);
+      await MessageApi.delete(conversationId, messageId);
+      commit(types.DELETE_MESSAGE, { conversationId, id: messageId });
+      commit(types.DELETE_CONVERSATION_ATTACHMENTS, {
+        id: messageId,
+        conversation_id: conversationId,
+        status: MESSAGE_STATUS.SENT,
+      });
     } catch (error) {
       throw new Error(error);
     }
